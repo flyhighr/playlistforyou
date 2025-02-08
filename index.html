@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Playlist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Comic Neue", cursive;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #fafafa;
+            transition: background 0.8s ease;
+            text-align: center;
+            overflow-x: hidden;
+        }
+
+        .welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .welcome-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            color: #4a90e2;
+            margin-bottom: 1rem;
+            font-family: "Gochi Hand", cursive;
+        }
+
+        .welcome-text {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .open-playlist-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            font-family: "Comic Neue", cursive;
+        }
+
+        .open-playlist-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .container {
+            background: #ffffff;
+            border: 2px solid #ccc;
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 1000px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            opacity: 0;
+            animation: fadeIn 0.8s ease forwards;
+            transition: all 0.8s ease;
+            display: none;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .left-side {
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .left-side h1 {
+            font-size: 3.5rem;
+            font-family: "Comic Neue", cursive;
+            font-weight: 700;
+            margin: 0;
+            transition: color 0.8s ease;
+        }
+
+        .left-side p {
+            margin-top: 8px;
+            font-size: 1.4rem;
+            opacity: 0.75;
+            transition: color 0.8s ease;
+        }
+
+        .right-side {
+            position: relative;
+            flex: 1;
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        .cards {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            position: absolute;
+            width: 60%;
+            height: 100%;
+            left: 0;
+            right: 0;
+            margin: auto;
+            border-radius: 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border: 2px solid #bbb;
+            background-color: #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        #item-1:checked ~ .cards #song-5,
+        #item-2:checked ~ .cards #song-1,
+        #item-3:checked ~ .cards #song-2,
+        #item-4:checked ~ .cards #song-3,
+        #item-5:checked ~ .cards #song-4 {
+            transform: translateX(-40%) scale(0.8);
+            opacity: 0.4;
+            z-index: 0;
+        }
+
+        #item-1:checked ~ .cards #song-2,
+        #item-2:checked ~ .cards #song-3,
+        #item-3:checked ~ .cards #song-4,
+        #item-4:checked ~ .cards #song-5,
+        #item-5:checked ~ .cards #song-1 {
+            transform: translateX(40%) scale(0.8);
+            opacity: 0.4;
+            z-index: 0;
+        }
+
+        #item-1:checked ~ .cards #song-1,
+        #item-2:checked ~ .cards #song-2,
+        #item-3:checked ~ .cards #song-3,
+        #item-4:checked ~ .cards #song-4,
+        #item-5:checked ~ .cards #song-5 {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+            z-index: 1;
+        }
+
+        .player {
+            margin-top: 20px;
+            border: 2px solid #ccc;
+            border-radius: 14px;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            transition: all 0.8s ease;
+            text-align: left;
+            position: relative;
+        }
+
+        #youtube-player {
+            display: none;
+        }
+
+        .song-info {
+            display: none;
+        }
+
+        .song-info.active {
+            display: block;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .song-info .title {
+            font-size: 1.6rem;
+            font-family: "Comic Neue", cursive;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .song-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+            font-family: "Comic Neue", cursive;
+        }
+
+        .progress-bar {
+            height: 6px;
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .progress {
+            height: 100%;
+            width: 0%;
+            border-radius: 3px;
+            background-color: #777;
+            transition: width 0.1s linear;
+        }
+
+        .time-indicator {
+            font-size: 1rem;
+            margin-top: 3px;
+            display: flex;
+            justify-content: space-between;
+            font-family: "Comic Neue", cursive;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .controls button {
+            background: none;
+            border: none;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .controls button:hover {
+            transform: scale(1.2);
+        }
+
+        .extra-controls {
+            margin-top: 15px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .favorite-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #777;
+            transition: color 0.3s ease;
+        }
+
+        .favorite-btn.favorited {
+            color: #ff4444;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 20px;
+                gap: 20px;
+            }
+
+            .cards {
+                height: 220px;
+            }
+
+            .card {
+                width: 70%;
+            }
+
+            .left-side h1 {
+                font-size: 2.5rem;
+            }
+
+            .left-side p {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cards {
+                height: 180px;
+            }
+
+            .card {
+                width: 80%;
+            }
+
+            .controls button {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+  <div class="welcome-screen">
+        <div class="welcome-content">
+            <h1 class="welcome-title">Someone sent you a playlist</h1>
+            <p class="welcome-text">Hey, it's for you. I hope you listen to it.</p>
+            <button class="open-playlist-btn">Open Playlist</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="left-side">
+            <h1>Playlist</h1>
+            <p>Songs that remind me of you</p>
+        </div>
+        
+        <div class="right-side">
+            <input type="radio" name="slider" id="item-1" checked>
+            <input type="radio" name="slider" id="item-2">
+            <input type="radio" name="slider" id="item-3">
+            <input type="radio" name="slider" id="item-4">
+            <input type="radio" name="slider" id="item-5">
+            
+            <div class="cards">
+                <label class="card" for="item-1" id="song-1">
+                    <img src="https://i.scdn.co/image/ab67616d0000b27384e864c4464946acecf15f9c" alt="Wave to Earth">
+                </label>
+                <label class="card" for="item-2" id="song-2">
+                    <img src="https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526" alt="Frank Ocean">
+                </label>
+                <label class="card" for="item-3" id="song-3">
+                    <img src="https://i.redd.it/kkd6b6mkgcfa1.jpg" alt="Taylor Swift">
+                </label>
+                <label class="card" for="item-4" id="song-4">
+                    <img src="https://i1.sndcdn.com/artworks-000073333980-azesnd-t500x500.jpg" alt="Joe Hisaishi">
+                </label>
+                <label class="card" for="item-5" id="song-5">
+                    <img src="https://images.genius.com/c807961087256ae01fa1005527394ec2.1000x1000x1.jpg" alt="The 1975">
+                </label>
+            </div>
+
+            <div id="youtube-player"></div>
+            
+            
+
+            <div class="player">
+                <div class="song-info active" id="song-info-1">
+                    <div class="title">Seasons</div>
+                    <div class="song-details">
+                        <span class="artist">Wave to Earth</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="time-indicator">
+                        <span class="elapsed">0:00</span>
+                        <span class="remaining">0:00</span>
+                    </div>
+                </div>
+
+                <div class="song-info" id="song-info-2">
+                    <div class="title">ivy</div>
+                    <div class="song-details">
+                        <span class="artist">Frank Ocean</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="time-indicator">
+                        <span class="elapsed">0:00</span>
+                        <span class="remaining">0:00</span>
+                    </div>
+                </div>
+
+                <div class="song-info" id="song-info-3">
+                    <div class="title">Daylight</div>
+                    <div class="song-details">
+                        <span class="artist">Taylor Swift</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="time-indicator">
+                        <span class="elapsed">0:00</span>
+                        <span class="remaining">0:00</span>
+                    </div>
+                </div>
+
+                <div class="song-info" id="song-info-4">
+                    <div class="title">One Summer's Day</div>
+                    <div class="song-details">
+                        <span class="artist">Joe Hisaishi</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="time-indicator">
+                        <span class="elapsed">0:00</span>
+                        <span class="remaining">0:00</span>
+                    </div>
+                </div>
+
+                <div class="song-info" id="song-info-5">
+                    <div class="title">About You</div>
+                    <div class="song-details">
+                        <span class="artist">The 1975</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="time-indicator">
+                        <span class="elapsed">0:00</span>
+                        <span class="remaining">0:00</span>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="prev">◁</button>
+                    <button id="pause">▶</button>
+                    <button id="next">▷</button>
+                </div>
+                
+                <div class="extra-controls">
+                    <button id="favorite" class="favorite-btn">♡</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        // Playlist configuration - Replace these with your YouTube video IDs
+        const playlist = [
+            {
+                videoId: 'CnVVjLOGVoY', // Replace with actual YouTube video ID
+                title: 'Seasons',
+                artist: 'Wave to Earth'
+            },
+            {
+                videoId: 'AE005nZeF-A', // Replace with actual YouTube video ID
+                title: 'ivy',
+                artist: 'Frank Ocean'
+            },
+            {
+                videoId: 'u9raS7-NisU', // Replace with actual YouTube video ID
+                title: 'Daylight',
+                artist: 'Taylor Swift'
+            },
+            {
+                videoId: 'TK1Ij_-mank', // Replace with actual YouTube video ID
+                title: 'One Summer\'s Day',
+                artist: 'Joe Hisaishi'
+            },
+            {
+                videoId: 'tGv7CUutzqU', // Replace with actual YouTube video ID
+                title: 'About You',
+                artist: 'The 1975'
+            }
+        ];
+
+        let player;
+        let currentSong = 0;
+        let progressInterval;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'disablekb': 1
+                },
+                events: {'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        document.querySelector('.open-playlist-btn').addEventListener('click', function() {
+            const welcomeScreen = document.querySelector('.welcome-screen');
+            const container = document.querySelector('.container');
+            
+            welcomeScreen.style.opacity = '0';
+            container.style.display = 'flex';
+            
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+            }, 500);
+        });
+
+        // Your existing JavaScript with these modifications:
+        function onPlayerStateChange(event) {
+            const pauseButton = document.getElementById('pause');
+            
+            if (event.data == YT.PlayerState.ENDED) {
+                nextSong();
+                pauseButton.textContent = '▶';
+            } else if (event.data == YT.PlayerState.PLAYING) {
+                pauseButton.textContent = '▐▐';
+                const duration = formatTime(player.getDuration());
+                document.querySelector(`#song-info-${currentSong + 1} .duration`).textContent = duration;
+                document.querySelector(`#song-info-${currentSong + 1} .remaining`).textContent = duration;
+                startProgress();
+            } else if (event.data == YT.PlayerState.PAUSED) {
+                pauseButton.textContent = '▶';
+            }
+        }
+
+        function onPlayerReady(event) {
+            player.loadVideoById(playlist[currentSong].videoId);
+            player.pauseVideo(); // Start paused
+            updateSongInfo();
+        }
+
+        function updateSongInfo() {
+            // Update song info display
+            document.querySelectorAll('.song-info').forEach(info => info.classList.remove('active'));
+            document.getElementById(`song-info-${currentSong + 1}`).classList.add('active');
+            
+            // Update radio button
+            document.getElementById(`item-${currentSong + 1}`).checked = true;
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function startProgress() {
+            clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                if (player && player.getCurrentTime && player.getDuration) {
+                    const currentTime = player.getCurrentTime();
+                    const duration = player.getDuration();
+                    const progress = (currentTime / duration) * 100;
+                    
+                    // Update progress bar
+                    const currentProgressBar = document.querySelector(`#song-info-${currentSong + 1} .progress`);
+                    currentProgressBar.style.width = `${progress}%`;
+                    
+                    // Update time displays
+                    const currentElapsed = document.querySelector(`#song-info-${currentSong + 1} .elapsed`);
+                    const currentRemaining = document.querySelector(`#song-info-${currentSong + 1} .remaining`);
+                    
+                    currentElapsed.textContent = formatTime(currentTime);
+                    currentRemaining.textContent = formatTime(duration - currentTime);
+                }
+            }, 100);
+        }
+
+        function togglePlay() {
+            const pauseButton = document.getElementById('pause');
+            if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                player.pauseVideo();
+                pauseButton.textContent = '▶';
+                clearInterval(progressInterval);
+            } else {
+                player.playVideo();
+                pauseButton.textContent = '▐▐';
+                startProgress();
+            }
+        }
+
+        function nextSong() {
+            clearInterval(progressInterval);
+            currentSong = (currentSong + 1) % playlist.length;
+            player.loadVideoById(playlist[currentSong].videoId);
+            updateSongInfo();
+        }
+
+        function prevSong() {
+            clearInterval(progressInterval);
+            currentSong = (currentSong - 1 + playlist.length) % playlist.length;
+            player.loadVideoById(playlist[currentSong].videoId);
+            updateSongInfo();
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const radioInputs = document.querySelectorAll('input[type="radio"]');
+            const pauseButton = document.getElementById('pause');
+            const prevButton = document.getElementById('prev');
+            const nextButton = document.getElementById('next');
+            const favoriteButton = document.getElementById('favorite');
+            const progressBars = document.querySelectorAll('.progress-bar');
+
+            radioInputs.forEach((input, index) => {
+                input.addEventListener('change', () => {
+                    currentSong = index;
+                    player.loadVideoById(playlist[currentSong].videoId);
+                    updateSongInfo();
+                });
+            });
+
+            progressBars.forEach(bar => {
+                bar.addEventListener('click', (e) => {
+                    const rect = e.target.getBoundingClientRect();
+                    const clickPosition = (e.clientX - rect.left) / rect.width;
+                    if (player.getDuration) {
+                        player.seekTo(clickPosition * player.getDuration());
+                    }
+                });
+            });
+
+            pauseButton.addEventListener('click', togglePlay);
+            prevButton.addEventListener('click', prevSong);
+            nextButton.addEventListener('click', nextSong);
+            
+            favoriteButton.addEventListener('click', () => {
+                favoriteButton.classList.toggle('favorited');
+                favoriteButton.textContent = favoriteButton.classList.contains('favorited') ? '♥' : '♡';
+            });
+        });
+    </script>
+</body>
+</html>
