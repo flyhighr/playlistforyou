@@ -184,9 +184,12 @@
         }
 
         .title {
-            font-size: 2rem;
-            color: #333;
-            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            line-height: 1.2;
+            height: 2.4rem;
         }
 
         .song-details {
@@ -197,10 +200,11 @@
         }
 
         .artist {
-            font-size: 1.2rem;
-            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
         }
-
         .progress-bar {
             width: 100%;
             height: 4px;
@@ -286,6 +290,15 @@
             .header p { font-size: 1.2rem; }
             .cards { width: 250px; height: 250px; }
         }
+                @media (max-width: 768px) {
+            .title { 
+                font-size: 1.5rem;
+                height: 1.8rem;
+            }
+            .artist { 
+                font-size: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -314,19 +327,19 @@
             
             <div class="cards">
                 <label class="card" for="item-1" id="song-1">
-                    <img src="https://i.scdn.co/image/ab67616d0000b27384e864c4464946acecf15f9c" alt="Wave to Earth">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/0/03/Chasingcars.jpg" alt="Snow Patrol">
                 </label>
                 <label class="card" for="item-2" id="song-2">
-                    <img src="https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526" alt="Frank Ocean">
+                    <img src="https://i.scdn.co/image/ab67616d0000b27334ef8f7d06cf2fc2146f420a" alt="The Beatles">
                 </label>
                 <label class="card" for="item-3" id="song-3">
-                    <img src="https://i.redd.it/kkd6b6mkgcfa1.jpg" alt="Taylor Swift">
+                    <img src="https://i.scdn.co/image/ab67616d0000b27340461e96808378ae2787a7e4" alt="Mac DeMarco">
                 </label>
                 <label class="card" for="item-4" id="song-4">
-                    <img src="https://i1.sndcdn.com/artworks-000073333980-azesnd-t500x500.jpg" alt="Joe Hisaishi">
+                    <img src="https://i.scdn.co/image/ab67616d0000b273b8eaddefb882b1c71c5aba71" alt="Takayoshi">
                 </label>
                 <label class="card" for="item-5" id="song-5">
-                    <img src="https://images.genius.com/c807961087256ae01fa1005527394ec2.1000x1000x1.jpg" alt="The 1975">
+                    <img src="https://c.saavncdn.com/140/Waking-Up-Together-With-You-English-2023-20230629022937-500x500.jpg" alt="Ardhito Pramono">
                 </label>
             </div>
 
@@ -334,9 +347,9 @@
             
             <div class="player">
                 <div class="song-info active" id="song-info-1">
-                    <div class="title">Seasons</div>
+                    <div class="title">Chasing cars</div>
                     <div class="song-details">
-                        <span class="artist">Wave to Earth</span>
+                        <span class="artist">Snow Patrol</span>
                         <span class="duration">0:00</span>
                     </div>
                     <div class="progress-bar">
@@ -349,9 +362,9 @@
                 </div>
 
                 <div class="song-info" id="song-info-2">
-                    <div class="title">ivy</div>
+                    <div class="title">Lucy in the sky</div>
                     <div class="song-details">
-                        <span class="artist">Frank Ocean</span>
+                        <span class="artist">The Beatles</span>
                         <span class="duration">0:00</span>
                     </div>
                     <div class="progress-bar">
@@ -364,9 +377,9 @@
                 </div>
 
                 <div class="song-info" id="song-info-3">
-                    <div class="title">Daylight</div>
+                    <div class="title">20191009 I Like Her</div>
                     <div class="song-details">
-                        <span class="artist">Taylor Swift</span>
+                        <span class="artist">Mac DeMarco</span>
                         <span class="duration">0:00</span>
                     </div>
                     <div class="progress-bar">
@@ -379,9 +392,9 @@
                 </div>
 
                 <div class="song-info" id="song-info-4">
-                    <div class="title">One Summer's Day</div>
+                    <div class="title">unconditionally</div>
                     <div class="song-details">
-                        <span class="artist">Joe Hisaishi</span>
+                        <span class="artist">Takayoshi</span>
                         <span class="duration">0:00</span>
                     </div>
                     <div class="progress-bar">
@@ -394,9 +407,9 @@
                 </div>
 
                 <div class="song-info" id="song-info-5">
-                    <div class="title">About You</div>
+                    <div class="title">Waking Up Together With You</div>
                     <div class="song-details">
-                        <span class="artist">The 1975</span>
+                        <span class="artist">Ardhito Pramono</span>
                         <span class="duration">0:00</span>
                     </div>
                     <div class="progress-bar">
@@ -425,29 +438,29 @@
     <script>
         const playlist = [
             {
-                videoId: 'CnVVjLOGVoY',
-                title: 'Seasons',
-                artist: 'Wave to Earth'
+                videoId: 'GemKqzILV4w',
+                title: 'Chasing cars',
+                artist: 'Snow Patrol'
             },
             {
-                videoId: 'AE005nZeF-A',
-                title: 'ivy',
-                artist: 'Frank Ocean'
+                videoId: 'aGPTfxdw_lw',
+                title: 'Lucy in the sky',
+                artist: 'The Beatles'
             },
             {
-                videoId: 'u9raS7-NisU',
-                title: 'Daylight',
-                artist: 'Taylor Swift'
+                videoId: 'r4ThHPMhmXQ',
+                title: '20191009 I Like Her',
+                artist: 'Mac DeMarco'
             },
             {
-                videoId: 'TK1Ij_-mank',
-                title: 'One Summer\'s Day',
-                artist: 'Joe Hisaishi'
+                videoId: 'GUNkkQ8REg8',
+                title: 'unconditionally',
+                artist: 'Takayoshi'
             },
             {
-                videoId: 'tGv7CUutzqU',
-                title: 'About You',
-                artist: 'The 1975'
+                videoId: 'EqUdC4hnvcA',
+                title: 'Waking Up Together With You',
+                artist: 'Ardhito Pramono'
             }
         ];
 
