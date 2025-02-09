@@ -143,6 +143,16 @@
             transform: translateX(100%) scale(0.8);
             pointer-events: none;
         }
+      
+        .cards {
+            touch-action: pan-y pinch-zoom;
+            user-select: none;
+        }
+
+        .card {
+            touch-action: pan-y pinch-zoom;
+            user-select: none;
+        }
 
         .card.active {
             opacity: 1;
@@ -438,14 +448,60 @@
 
         function initializeViewer() {
             if (!playlist) return;
-            
+
             document.querySelector('.welcome-title').textContent = `${playlist.sender_name} sent you a playlist`;
             document.querySelector('.welcome-text').textContent = playlist.welcome_message;
             document.querySelector('.header p').textContent = `Songs that remind ${playlist.sender_name} of you`;
-            
+
             generateCards();
             generateSongInfo();
             updateCardClasses();
+            initializeCardListeners();
+            initializeTouchListeners();
+        }
+
+        function initializeCardListeners() {
+            document.querySelectorAll('.card').forEach((card, index) => {
+                card.addEventListener('click', () => {
+                    if (index !== currentSong) {
+                        currentSong = index;
+                        const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
+                        player.loadVideoById(videoId);
+                        updateSongInfo();
+                    }
+                });
+            });
+        }
+
+        function initializeTouchListeners() {
+            const cardsContainer = document.getElementById('cards-container');
+            let startX = 0;
+            let isDragging = false;
+
+            cardsContainer.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+            });
+
+            cardsContainer.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const currentX = e.touches[0].clientX;
+                const diff = startX - currentX;
+
+                if (Math.abs(diff) > 50) {
+                    isDragging = false;
+                    if (diff > 0) {
+                        nextSong();
+                    } else {
+                        prevSong();
+                    }
+                }
+            });
+
+            cardsContainer.addEventListener('touchend', () => {
+                isDragging = false;
+            });
         }
 
         function generateCards() {
@@ -611,17 +667,6 @@
                         console.log("Fullscreen request failed");
                     });
                 }, 500);
-            });
-
-            document.querySelectorAll('.card').forEach((card, index) => {
-                card.addEventListener('click', () => {
-                    if (index !== currentSong) {
-                        currentSong = index;
-                        const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
-                        player.loadVideoById(videoId);
-                        updateSongInfo();
-                    }
-                });
             });
 
             document.querySelectorAll('.progress-bar').forEach(bar => {
