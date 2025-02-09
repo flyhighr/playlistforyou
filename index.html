@@ -94,6 +94,93 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding-right: 120px;
+        }
+
+        .search-button {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            padding: 0 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 0 12px 12px 0;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            background: #5a67d8;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .song-card {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .song-card:last-child {
+            border-bottom: none;
+        }
+
+        .song-card:hover {
+            background: #f7fafc;
+        }
+
+        .song-card img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            margin-right: 1rem;
+            object-fit: cover;
+        }
+
+        .song-info {
+            flex: 1;
+        }
+
+        .song-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+        }
+
+        .song-artist {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
         .remove-song {
             position: absolute;
             top: 1rem;
@@ -125,6 +212,10 @@
             width: 100%;
             margin-top: 1rem;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         .add-song:hover {
@@ -151,30 +242,82 @@
             transform: translateY(-2px);
         }
 
-        .custom-url-toggle {
-            margin-bottom: 1rem;
-            display: flex;
+        .loading {
+            display: none;
+            justify-content: center;
             align-items: center;
-            gap: 0.5rem;
+            padding: 1rem;
         }
 
-        .url-check {
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tab-container {
             display: flex;
             gap: 1rem;
-            align-items: center;
+            margin-bottom: 1.5rem;
         }
 
-        .url-status {
-            font-size: 0.9rem;
-            font-weight: 500;
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .url-available {
-            color: #48bb78;
+        .tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
         }
 
-        .url-taken {
-            color: #ff4e4e;
+        .input-method {
+            display: none;
+        }
+
+        .input-method.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .song-entry {
+                padding: 1rem;
+            }
+
+            .tab-container {
+                flex-direction: column;
+            }
+
+            .search-button {
+                padding: 0 1rem;
+            }
         }
 
         .success {
@@ -194,20 +337,7 @@
             background: white;
             border-radius: 8px;
             color: #2d3748;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1.5rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            .song-entry {
-                padding: 1rem;
-            }
+            word-break: break-all;
         }
     </style>
 </head>
@@ -217,20 +347,6 @@
         <p class="intro-text">Share your favorite songs with someone special. Create a unique playlist with your personal message and let the music speak for you. 🎵</p>
         
         <form id="playlist-form">
-            <div class="custom-url-toggle">
-                <input type="checkbox" id="use-custom-url">
-                <label for="use-custom-url">I want to choose my own custom URL</label>
-            </div>
-
-            <div class="form-group" id="custom-url-group" style="display: none;">
-                <label for="custom-url">Custom URL</label>
-                <div class="url-check">
-                    <input type="text" id="custom-url" placeholder="Enter your custom URL (e.g., mysongs)"
-                           pattern="[a-zA-Z0-9]{3,50}" title="3-50 alphanumeric characters only">
-                    <span class="url-status"></span>
-                </div>
-            </div>
-
             <div class="form-group">
                 <label for="sender-name">Your Name</label>
                 <input type="text" id="sender-name" placeholder="How you want to appear as the sender" required>
@@ -241,11 +357,36 @@
                 <textarea id="welcome-message" rows="3" placeholder="Write a heartfelt message for your recipient..." required></textarea>
             </div>
 
+            <div class="tab-container">
+                <div class="tab active" data-tab="search">Search Songs</div>
+                <div class="tab" data-tab="manual">Manual Entry</div>
+            </div>
+
+            <div class="input-method active" id="search-method">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search for a song...">
+                    <button type="button" class="search-button">Search</button>
+                    <div class="search-results"></div>
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-method" id="manual-method">
+                <button type="button" class="add-song">
+                    <span>Add Song Manually</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+
             <div class="songs-container" id="songs-container">
                 <!-- Song entries will be added here -->
             </div>
 
-            <button type="button" class="add-song" id="add-song">+ Add Another Song</button>
             <button type="submit" class="submit-playlist">Create Your Playlist ✨</button>
         </form>
     </div>
@@ -254,51 +395,99 @@
         const BACKEND_URL = 'https://ptrmoy.onrender.com';
         let songCount = 0;
 
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.input-method').forEach(m => m.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-method`).classList.add('active');
+            });
+        });
+
+        // Spotify search functionality
+        const searchInput = document.querySelector('.search-input');
+        const searchButton = document.querySelector('.search-button');
+        const searchResults = document.querySelector('.search-results');
+        const loading = document.querySelector('.loading');
+
+        async function searchSongs(query) {
+            try {
+                loading.classList.add('active');
+                searchResults.classList.remove('active');
+                
+                const response = await fetch(`${BACKEND_URL}/api/search/songs/${encodeURIComponent(query)}`);
+                const songs = await response.json();
+                
+                searchResults.innerHTML = '';
+                songs.forEach(song => {
+                    const songCard = document.createElement('div');
+                    songCard.className = 'song-card';
+                    songCard.innerHTML = `
+                        <img src="${song.cover_url}" alt="${song.title}">
+                        <div class="song-info">
+                            <div class="song-title">${song.title}</div>
+                            <div class="song-artist">${song.artist}</div>
+                        </div>
+                    `;
+                    
+                    songCard.addEventListener('click', () => {
+                        addSpotifySong(song);
+                        searchResults.classList.remove('active');
+                        searchInput.value = '';
+                    });
+                    
+                    searchResults.appendChild(songCard);
+                });
+                
+                searchResults.classList.add('active');
+            } catch (error) {
+                console.error('Error searching songs:', error);
+                searchResults.innerHTML = '<div class="song-card">Error searching songs. Please try again.</div>';
+                searchResults.classList.add('active');
+            } finally {
+                loading.classList.remove('active');
+            }
         }
 
-        const checkUrlAvailability = debounce(async (url) => {
-            const statusSpan = document.querySelector('.url-status');
-            
-            if (!url) {
-                statusSpan.textContent = '';
-                return;
-            }
-            
-            if (url.length < 3) {
-                statusSpan.textContent = 'URL too short';
-                statusSpan.className = 'url-status url-taken';
+        function addSpotifySong(spotifySong) {
+            if (songCount >= 100) {
+                alert('Maximum 100 songs allowed');
                 return;
             }
 
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/url-available/${url}`);
-                const data = await response.json();
-                
-                if (data.available) {
-                    statusSpan.textContent = '✓ Available';
-                    statusSpan.className = 'url-status url-available';
-                } else {
-                    statusSpan.textContent = '✗ Already taken';
-                    statusSpan.className = 'url-status url-taken';
-                }
-            } catch (error) {
-                console.error('Error checking URL:', error);
-                statusSpan.textContent = 'Error checking availability';
-                statusSpan.className = 'url-status url-taken';
-            }
-        }, 500);
+            const songEntry = document.createElement('div');
+            songEntry.className = 'song-entry';
+            songEntry.innerHTML = `
+                <button type="button" class="remove-song">Remove</button>
+                <div class="form-group">
+                    <label>Song Title</label>
+                    <input type="text" class="song-title" value="${spotifySong.title}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Artist</label>
+                    <input type="text" class="song-artist" value="${spotifySong.artist}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Cover Image URL</label>
+                    <input type="url" class="song-cover" value="${spotifySong.cover_url}" readonly>
+                </div>
+                <div class="form-group">
+                    <label>YouTube URL</label>
+                    <input type="url" class="song-youtube" placeholder="Paste the YouTube video URL" required>
+                </div>
+            `;
+            document.getElementById('songs-container').appendChild(songEntry);
+            songCount++;
+            
+            songEntry.querySelector('.remove-song').addEventListener('click', () => {
+                songEntry.remove();
+                songCount--;
+            });
+        }
 
-        function addSongEntry() {
+        function addManualSong() {
             if (songCount >= 100) {
                 alert('Maximum 100 songs allowed');
                 return;
@@ -328,6 +517,7 @@
 
             document.getElementById('songs-container').appendChild(songEntry);
             songCount++;
+            
             songEntry.querySelector('.remove-song').addEventListener('click', () => {
                 songEntry.remove();
                 songCount--;
@@ -337,8 +527,6 @@
         async function handleSubmit(e) {
             e.preventDefault();
 
-            const useCustomUrl = document.getElementById('use-custom-url').checked;
-            const customUrl = useCustomUrl ? document.getElementById('custom-url').value : null;
             const senderName = document.getElementById('sender-name').value;
             const welcomeMessage = document.getElementById('welcome-message').value;
 
@@ -349,15 +537,16 @@
                 youtube_url: entry.querySelector('.song-youtube').value
             }));
 
+            if (songs.length === 0) {
+                alert('Please add at least one song to your playlist');
+                return;
+            }
+
             const playlistData = {
                 sender_name: senderName,
                 welcome_message: welcomeMessage,
                 songs: songs
             };
-
-            if (customUrl) {
-                playlistData.custom_url = customUrl;
-            }
 
             try {
                 const response = await fetch(`${BACKEND_URL}/api/playlists`, {
@@ -394,28 +583,32 @@
             }
         }
 
-        // Toggle custom URL input visibility
-        document.getElementById('use-custom-url').addEventListener('change', (e) => {
-            const customUrlGroup = document.getElementById('custom-url-group');
-            const customUrlInput = document.getElementById('custom-url');
-            
-            if (e.target.checked) {
-                customUrlGroup.style.display = 'block';
-                customUrlInput.required = true;
-            } else {
-                customUrlGroup.style.display = 'none';
-                customUrlInput.required = false;
-                customUrlInput.value = '';
-                document.querySelector('.url-status').textContent = '';
+        // Event listeners
+        searchButton.addEventListener('click', () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                searchSongs(query);
             }
         });
 
-        document.getElementById('add-song').addEventListener('click', addSongEntry);
-        document.getElementById('playlist-form').addEventListener('submit', handleSubmit);
-        document.getElementById('custom-url').addEventListener('input', (e) => checkUrlAvailability(e.target.value));
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = searchInput.value.trim();
+                if (query) {
+                    searchSongs(query);
+                }
+            }
+        });
 
-        // Add first song entry on page load
-        addSongEntry();
+        document.addEventListener('click', (e) => {
+            if (!searchResults.contains(e.target) && !searchInput.contains(e.target)) {
+                searchResults.classList.remove('active');
+            }
+        });
+
+        document.querySelector('.add-song').addEventListener('click', addManualSong);
+        document.getElementById('playlist-form').addEventListener('submit', handleSubmit);
     </script>
 </body>
 </html>
