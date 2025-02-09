@@ -3,650 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Playlist</title>
-    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <title>Songs That Reminds Me Of You</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: "Comic Neue", sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            background: #ffffff;
+            background: #f5f5f5;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        .welcome-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(8px);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: all 0.5s ease;
-        }
-
-        .welcome-content {
-            text-align: center;
-            max-width: 90%;
-            width: 400px;
             padding: 2rem;
-        }
-
-        .welcome-title {
-            font-size: 2.5rem;
-            color: #333;
-            margin-bottom: 1rem;
-        }
-
-        .welcome-text {
-            font-size: 1.3rem;
-            color: #666;
-            margin-bottom: 2rem;
-        }
-
-        .open-playlist-btn {
-            background: none;
-            border: 2px solid #333;
-            color: #333;
-            padding: 1rem 2rem;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .open-playlist-btn:hover {
-            background: #333;
-            color: white;
         }
 
         .container {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
             padding: 2rem;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            display: none;
-            padding-top: 5vh;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .header {
+        h1 {
             text-align: center;
             margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            font-size: 3.5rem;
-            margin-bottom: 0.5rem;
             color: #333;
         }
 
-        .header p {
-            font-size: 1.8rem;
-            color: #666;
+        .form-group {
+            margin-bottom: 1.5rem;
         }
 
-        input[type="radio"] {
-            display: none;
-        }
-
-        .cards {
-            position: relative;
-            width: 350px;
-            height: 350px;
-            margin: 2rem 0;
-        }
-
-        .card {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 15px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-        .card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        #item-1:checked ~ .cards #song-5,
-        #item-2:checked ~ .cards #song-1,
-        #item-3:checked ~ .cards #song-2,
-        #item-4:checked ~ .cards #song-3,
-        #item-5:checked ~ .cards #song-4 {
-            transform: translateX(-40%) scale(0.8);
-            opacity: 0.4;
-            z-index: 0;
-        }
-
-        #item-1:checked ~ .cards #song-2,
-        #item-2:checked ~ .cards #song-3,
-        #item-3:checked ~ .cards #song-4,
-        #item-4:checked ~ .cards #song-5,
-        #item-5:checked ~ .cards #song-1 {
-            transform: translateX(40%) scale(0.8);
-            opacity: 0.4;
-            z-index: 0;
-        }
-
-        #item-1:checked ~ .cards #song-1,
-        #item-2:checked ~ .cards #song-2,
-        #item-3:checked ~ .cards #song-3,
-        #item-4:checked ~ .cards #song-4,
-        #item-5:checked ~ .cards #song-5 {
-            transform: translateX(0) scale(1);
-            opacity: 1;
-            z-index: 1;
-        }
-
-        .song-info {
-            display: none;
-            animation: fadeIn 0.3s ease;
-            width: 100%;
-            max-width: 500px;
-            margin-top: 1rem;
-        }
-
-        .song-info.active {
+        label {
             display: block;
-        }
-
-        .title {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
             margin-bottom: 0.5rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            color: #555;
+            font-weight: 500;
         }
 
-        .song-details {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            font-size: 1.2rem;
-        }
-
-        .artist {
-            color: #666;
-            font-size: 1.4rem;
-        }
-
-        .progress-bar {
+        input, textarea {
             width: 100%;
-            height: 6px;
-            background: #eee;
-            border-radius: 3px;
-            margin: 1rem 0;
-            cursor: pointer;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
         }
 
-        .progress {
-            height: 100%;
-            background: #333;
-            border-radius: 3px;
-            transition: width 0.1s linear;
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #007bff;
         }
 
-        .time-indicator {
-            display: flex;
-            justify-content: space-between;
-            color: #666;
-            font-size: 1.1rem;
+        .songs-container {
+            margin-top: 2rem;
+        }
+
+        .song-entry {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
             margin-bottom: 1rem;
+            position: relative;
         }
 
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 1rem;
-        }
-
-        .controls button {
-            background: none;
-            border: none;
-            font-size: 2.5rem;
-            color: #333;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .controls button:hover {
-            transform: scale(1.1);
-        }
-
-        .extra-controls {
-            display: flex;
-            justify-content: center;
-            margin-top: 1rem;
-        }
-
-        .favorite-btn {
-            background: none;
-            border: none;
-            font-size: 2rem;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .favorite-btn.favorited {
-            color: #ff4444;
-        }
-
-        #fullscreen-btn {
-            position: fixed;
+        .remove-song {
+            position: absolute;
             top: 1rem;
             right: 1rem;
-            background: none;
+            background: #ff4444;
+            color: white;
             border: none;
-            font-size: 2rem;
-            color: #666;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
             cursor: pointer;
-            z-index: 1001;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .add-song {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .submit-playlist {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-top: 2rem;
+        }
+
+        .error {
+            color: #ff4444;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .success {
+            text-align: center;
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+
+        .url-check {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .url-status {
+            font-size: 0.9rem;
+        }
+
+        .url-available {
+            color: #28a745;
+        }
+
+        .url-taken {
+            color: #ff4444;
         }
 
         @media (max-width: 768px) {
             .container {
-                padding-top: 2vh;
+                padding: 1rem;
             }
-            
-            .header h1 {
-                font-size: 2.5rem;
-            }
-            
-            .header p {
-                font-size: 1.2rem;
-            }
-            
-            .cards {
-                width: 280px;
-                height: 280px;
-            }
-            
-            .title {
-                font-size: 1.5rem;
-                white-space: normal;
-                line-height: 1.2;
-                height: auto;
-                max-height: 3.6rem;
-                overflow: hidden;
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
-            }
-            
-            .artist {
-                font-size: 1.1rem;
-            }
-            
-            .controls button {
-                font-size: 2rem;
-            }
-            
-            .favorite-btn {
-                font-size: 1.5rem;
+
+            input, textarea, button {
+                font-size: 16px; 
             }
         }
     </style>
 </head>
 <body>
-    <button id="fullscreen-btn">⛶</button>
-    
-    <div class="welcome-screen">
-        <div class="welcome-content">
-            <h1 class="welcome-title">Someone sent you a playlist</h1>
-            <p class="welcome-text">Hey, it's for you. I hope you listen to it.</p>
-            <button class="open-playlist-btn">Open Playlist</button>
-        </div>
-    </div>
-
     <div class="container">
-        <div class="header">
-            <h1>Playlist</h1>
-            <p>Songs that remind me of you</p>
-        </div>
+        <h1>Create Your Playlist</h1>
         
-        <input type="radio" name="slider" id="item-1" checked>
-        <input type="radio" name="slider" id="item-2">
-        <input type="radio" name="slider" id="item-3">
-        <input type="radio" name="slider" id="item-4">
-        <input type="radio" name="slider" id="item-5">
-        
-        <div class="cards">
-            <label class="card" for="item-1" id="song-1">
-                <img src="https://upload.wikimedia.org/wikipedia/en/0/03/Chasingcars.jpg" alt="Snow Patrol">
-            </label>
-            <label class="card" for="item-2" id="song-2">
-                <img src="https://i.scdn.co/image/ab67616d0000b27334ef8f7d06cf2fc2146f420a" alt="The Beatles">
-            </label>
-            <label class="card" for="item-3" id="song-3">
-                <img src="https://i.scdn.co/image/ab67616d0000b27340461e96808378ae2787a7e4" alt="Mac DeMarco">
-            </label>
-            <label class="card" for="item-4" id="song-4">
-                <img src="https://i.scdn.co/image/ab67616d0000b273b8eaddefb882b1c71c5aba71" alt="Takayoshi">
-            </label>
-            <label class="card" for="item-5" id="song-5">
-                <img src="https://c.saavncdn.com/140/Waking-Up-Together-With-You-English-2023-20230629022937-500x500.jpg" alt="Ardhito Pramono">
-            </label>
-        </div>
+        <form id="playlist-form">
+            <div class="form-group">
+                <label for="custom-url">Custom URL</label>
+                <div class="url-check">
+                    <input type="text" id="custom-url" placeholder="Enter your custom URL (e.g., mysongs)" required
+                           pattern="[a-zA-Z0-9]{3,50}" title="3-50 alphanumeric characters only">
+                    <span class="url-status"></span>
+                </div>
+            </div>
 
-        <div id="youtube-player"></div>
-        
-        <div class="song-info active" id="song-info-1">
-            <div class="title">Chasing cars</div>
-            <div class="song-details">
-                <span class="artist">Snow Patrol</span>
-                <span class="duration">0:00</span>
+            <div class="form-group">
+                <label for="sender-name">Your Name</label>
+                <input type="text" id="sender-name" placeholder="How you want to appear as the sender" required>
             </div>
-            <div class="progress-bar">
-                <div class="progress"></div>
-            </div>
-            <div class="time-indicator">
-                <span class="elapsed">0:00</span>
-                <span class="remaining">0:00</span>
-            </div>
-        </div>
 
-        <div class="song-info" id="song-info-2">
-            <div class="title">Lucy in the sky</div>
-            <div class="song-details">
-                <span class="artist">The Beatles</span>
-                <span class="duration">0:00</span>
+            <div class="form-group">
+                <label for="welcome-message">Welcome Message</label>
+                <textarea id="welcome-message" rows="3" placeholder="Write a message for your recipient" required></textarea>
             </div>
-            <div class="progress-bar">
-                <div class="progress"></div>
-            </div>
-            <div class="time-indicator">
-                <span class="elapsed">0:00</span>
-                <span class="remaining">0:00</span>
-            </div>
-        </div>
 
-        <div class="song-info" id="song-info-3">
-            <div class="title">20191009 I Like Her</div>
-            <div class="song-details">
-                <span class="artist">Mac DeMarco</span>
-                <span class="duration">0:00</span>
+            <div class="songs-container" id="songs-container">
+                <!-- Song entries will be added here -->
             </div>
-            <div class="progress-bar">
-                <div class="progress"></div>
-            </div>
-            <div class="time-indicator">
-                <span class="elapsed">0:00</span>
-                <span class="remaining">0:00</span>
-            </div>
-        </div>
 
-        <div class="song-info" id="song-info-4">
-            <div class="title">unconditionally</div>
-            <div class="song-details">
-                <span class="artist">Takayoshi</span>
-                <span class="duration">0:00</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress"></div>
-            </div>
-            <div class="time-indicator">
-                <span class="elapsed">0:00</span>
-                <span class="remaining">0:00</span>
-            </div>
-        </div>
-
-        <div class="song-info" id="song-info-5">
-            <div class="title">Waking Up Together With You</div>
-            <div class="song-details">
-                <span class="artist">Ardhito Pramono</span>
-                <span class="duration">0:00</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress"></div>
-            </div>
-            <div class="time-indicator">
-                <span class="elapsed">0:00</span>
-                <span class="remaining">0:00</span>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button id="prev">◁</button>
-            <button id="pause">▶</button>
-            <button id="next">▷</button>
-        </div>
-        
-        <div class="extra-controls">
-            <button id="favorite" class="favorite-btn">♡</button>
-        </div>
+            <button type="button" class="add-song" id="add-song">Add Song</button>
+            <button type="submit" class="submit-playlist">Create Playlist</button>
+        </form>
     </div>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        const playlist = [
-            {
-                videoId: 'GemKqzILV4w',
-                title: 'Chasing cars',
-                artist: 'Snow Patrol'
-            },
-            {
-                videoId: 'aGPTfxdw_lw',
-                title: 'Lucy in the sky',
-                artist: 'The Beatles'
-            },
-            {
-                videoId: 'r4ThHPMhmXQ',
-                title: '20191009 I Like Her',
-                artist: 'Mac DeMarco'
-            },
-            {
-                videoId: 'GUNkkQ8REg8',
-                title: 'unconditionally',
-                artist: 'Takayoshi'
-            },
-            {
-                videoId: 'EqUdC4hnvcA',
-                title: 'Waking Up Together With You',
-                artist: 'Ardhito Pramono'
+        const BACKEND_URL = 'https://ptrmoy.onrender.com';
+        let songCount = 0;
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        const checkUrlAvailability = debounce(async (url) => {
+            const statusSpan = document.querySelector('.url-status');
+            
+            if (url.length < 3) {
+                statusSpan.textContent = 'URL too short';
+                statusSpan.className = 'url-status url-taken';
+                return;
             }
-        ];
 
-        let player;
-        let currentSong = 0;
-        let progressInterval;
-
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('youtube-player', {
-                height: '0',
-                width: '0',
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 0,
-                    'disablekb': 1
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
-
-        document.querySelector('.open-playlist-btn').addEventListener('click', function() {
-            const welcomeScreen = document.querySelector('.welcome-screen');
-            const container = document.querySelector('.container');
-            
-            welcomeScreen.style.opacity = '0';
-            container.style.display = 'flex';
-            container.style.opacity = '1';
-            
-            setTimeout(() => {
-                welcomeScreen.style.display = 'none';
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log("Fullscreen request failed");
-                });
-            }, 500);
-        });
-
-        function onPlayerStateChange(event) {
-            const pauseButton = document.getElementById('pause');
-            
-            if (event.data == YT.PlayerState.ENDED) {
-                nextSong();
-                pauseButton.textContent = '▶';
-            } else if (event.data == YT.PlayerState.PLAYING) {
-                pauseButton.textContent = '▐▐';
-                const duration = formatTime(player.getDuration());
-                document.querySelector(`#song-info-${currentSong + 1} .duration`).textContent = duration;
-                document.querySelector(`#song-info-${currentSong + 1} .remaining`).textContent = duration;
-                startProgress();
-            } else if (event.data == YT.PlayerState.PAUSED) {
-                pauseButton.textContent = '▶';
-            }
-        }
-
-        function onPlayerReady(event) {
-            player.loadVideoById(playlist[currentSong].videoId);
-            player.pauseVideo();
-            updateSongInfo();
-        }
-
-        function updateSongInfo() {
-            document.querySelectorAll('.song-info').forEach(info => info.classList.remove('active'));
-            document.getElementById(`song-info-${currentSong + 1}`).classList.add('active');
-            document.getElementById(`item-${currentSong + 1}`).checked = true;
-        }
-
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = Math.floor(seconds % 60);
-            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-        }
-
-        function startProgress() {
-            clearInterval(progressInterval);
-            progressInterval = setInterval(() => {
-                if (player && player.getCurrentTime && player.getDuration) {
-                    const currentTime = player.getCurrentTime();
-                    const duration = player.getDuration();
-                    const progress = (currentTime / duration) * 100;
-                    
-                    const currentProgressBar = document.querySelector(`#song-info-${currentSong + 1} .progress`);
-                    currentProgressBar.style.width = `${progress}%`;
-                    
-                    const currentElapsed = document.querySelector(`#song-info-${currentSong + 1} .elapsed`);
-                    const currentRemaining = document.querySelector(`#song-info-${currentSong + 1} .remaining`);
-                    
-                    currentElapsed.textContent = formatTime(currentTime);
-                    currentRemaining.textContent = formatTime(duration - currentTime);
-                }
-            }, 100);
-        }
-
-        function togglePlay() {
-            const pauseButton = document.getElementById('pause');
-            if (player.getPlayerState() === YT.PlayerState.PLAYING) {
-                player.pauseVideo();
-                pauseButton.textContent = '▶';
-                clearInterval(progressInterval);
-            } else {
-                player.playVideo();
-                pauseButton.textContent = '▐▐';
-                startProgress();
-            }
-        }
-
-        function nextSong() {
-            clearInterval(progressInterval);
-            currentSong = (currentSong + 1) % playlist.length;
-            player.loadVideoById(playlist[currentSong].videoId);
-            updateSongInfo();
-        }
-
-        function prevSong() {
-            clearInterval(progressInterval);
-            currentSong = (currentSong - 1 + playlist.length) % playlist.length;
-            player.loadVideoById(playlist[currentSong].videoId);
-            updateSongInfo();
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const radioInputs = document.querySelectorAll('input[type="radio"]');
-            const pauseButton = document.getElementById('pause');
-            const prevButton = document.getElementById('prev');
-            const nextButton = document.getElementById('next');
-            const favoriteButton = document.getElementById('favorite');
-            const progressBars = document.querySelectorAll('.progress-bar');
-            const fullscreenButton = document.getElementById('fullscreen-btn');
-
-            radioInputs.forEach((input, index) => {
-                input.addEventListener('change', () => {
-                    currentSong = index;
-                    player.loadVideoById(playlist[currentSong].videoId);
-                    updateSongInfo();
-                });
-            });
-
-            progressBars.forEach(bar => {
-                bar.addEventListener('click', (e) => {
-                    const rect = e.target.getBoundingClientRect();
-                    const clickPosition = (e.clientX - rect.left) / rect.width;
-                    if (player.getDuration) {
-                        player.seekTo(clickPosition * player.getDuration());
-                    }
-                });
-            });
-
-            pauseButton.addEventListener('click', togglePlay);
-            prevButton.addEventListener('click', prevSong);
-            nextButton.addEventListener('click', nextSong);
-            
-            favoriteButton.addEventListener('click', () => {
-                favoriteButton.classList.toggle('favorited');
-                favoriteButton.textContent = favoriteButton.classList.contains('favorited') ? '♥' : '♡';
-            });
-
-            fullscreenButton.addEventListener('click', () => {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().catch(err => {
-                        console.log("Fullscreen request failed");
-                    });
-                    fullscreenButton.textContent = '⛶';
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/url-available/${url}`);
+                const data = await response.json();
+                
+                if (data.available) {
+                    statusSpan.textContent = '✓ Available';
+                    statusSpan.className = 'url-status url-available';
                 } else {
-                    document.exitFullscreen();
-                    fullscreenButton.textContent = '⛶';
+                    statusSpan.textContent = '✗ Already taken';
+                    statusSpan.className = 'url-status url-taken';
                 }
+            } catch (error) {
+                console.error('Error checking URL:', error);
+                statusSpan.textContent = 'Error checking availability';
+                statusSpan.className = 'url-status url-taken';
+            }
+        }, 500);
+
+        function addSongEntry() {
+            if (songCount >= 100) {
+                alert('Maximum 100 songs allowed');
+                return;
+            }
+
+            const songEntry = document.createElement('div');
+            songEntry.className = 'song-entry';
+            songEntry.innerHTML = `
+                <button type="button" class="remove-song">Remove</button>
+                <div class="form-group">
+                    <label>Song Title</label>
+                    <input type="text" class="song-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Artist</label>
+                    <input type="text" class="song-artist" required>
+                </div>
+                <div class="form-group">
+                    <label>Cover Image URL</label>
+                    <input type="url" class="song-cover" required>
+                </div>
+                <div class="form-group">
+                    <label>YouTube URL</label>
+                    <input type="url" class="song-youtube" required>
+                </div>
+            `;
+
+            document.getElementById('songs-container').appendChild(songEntry);
+            songCount++;
+            songEntry.querySelector('.remove-song').addEventListener('click', () => {
+                songEntry.remove();
+                songCount--;
             });
-        });
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            const customUrl = document.getElementById('custom-url').value;
+            const senderName = document.getElementById('sender-name').value;
+            const welcomeMessage = document.getElementById('welcome-message').value;
+
+            const songs = Array.from(document.querySelectorAll('.song-entry')).map(entry => ({
+                title: entry.querySelector('.song-title').value,
+                artist: entry.querySelector('.song-artist').value,
+                cover_url: entry.querySelector('.song-cover').value,
+                youtube_url: entry.querySelector('.song-youtube').value
+            }));
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/playlists`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        custom_url: customUrl,
+                        sender_name: senderName,
+                        welcome_message: welcomeMessage,
+                        songs: songs
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create playlist');
+                }
+
+                const data = await response.json();
+                
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success';
+                successDiv.innerHTML = `
+                    Playlist created successfully!<br>
+                    Share this link: <strong>${window.location.origin}/${customUrl}</strong>
+                `;
+                
+                document.querySelector('.container').appendChild(successDiv);
+                
+                document.getElementById('playlist-form').reset();
+                document.getElementById('songs-container').innerHTML = '';
+                songCount = 0;
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to create playlist. Please try again.');
+            }
+        }
+
+        document.getElementById('add-song').addEventListener('click', addSongEntry);
+        document.getElementById('playlist-form').addEventListener('submit', handleSubmit);
+        document.getElementById('custom-url').addEventListener('input', (e) => checkUrlAvailability(e.target.value));
+        addSongEntry();
     </script>
 </body>
 </html>
