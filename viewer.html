@@ -421,12 +421,19 @@
                 initializeViewer();
                 // Initialize YouTube player after we have the playlist
                 initializeYouTubePlayer();
+                
+                // Set the URL in the address bar
+                window.history.pushState({path: customUrl}, '', customUrl);
+                
+                // Store the custom URL in localStorage
+                localStorage.setItem('currentCustomUrl', customUrl);
             } catch (error) {
                 // Try to load from localStorage if fetch fails
                 const storedPlaylist = localStorage.getItem('currentPlaylist');
-                if (storedPlaylist) {
+                const storedCustomUrl = localStorage.getItem('currentCustomUrl');
+                if (storedPlaylist && storedCustomUrl) {
                     const parsed = JSON.parse(storedPlaylist);
-                    if (parsed.url === customUrl) {
+                    if (parsed.url === storedCustomUrl) {
                         playlist = parsed.data;
                         initializeViewer();
                         // Initialize YouTube player with stored playlist
@@ -440,16 +447,10 @@
         }
 
         function getCustomUrl() {
-            const storedUrl = sessionStorage.getItem('customUrl');
-            if (storedUrl) {
-                return storedUrl;
-            }
-            const pathUrl = window.location.pathname.substring(1);
-            if (pathUrl) {
-                sessionStorage.setItem('customUrl', pathUrl);
-                return pathUrl;
-            }
-            return null;
+            // Get the custom URL from the path
+            const path = window.location.pathname;
+            const customUrl = path.substring(1); // Remove the leading '/'
+            return customUrl || null;
         }
 
         function initializeViewer() {
@@ -503,32 +504,12 @@
             return match ? match[1] : null;
         }
 
-        function onYouTubeIframeAPIReady() {
-            const videoId = extractVideoId(playlist?.songs[0]?.youtube_url);
-            player = new YT.Player('youtube-player', {
-                height: '0',
-                width: '0',
-                videoId: videoId,
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 0,
-                    'disablekb': 1,
-                    'origin': window.location.origin
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
-
         function onPlayerReady(event) {
             isPlayerReady = true;
             const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
             player.loadVideoById(videoId);
             player.pauseVideo();
             updateSongInfo();
-
         }
 
         function onPlayerStateChange(event) {
@@ -621,6 +602,12 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Check for existing custom URL in localStorage
+            const storedCustomUrl = localStorage.getItem('currentCustomUrl');
+            if (storedCustomUrl) {
+                window.history.replaceState({}, '', storedCustomUrl);
+            }
+            
             fetchPlaylist();
 
             const pauseButton = document.getElementById('pause');
