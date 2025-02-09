@@ -336,21 +336,40 @@
         let currentSong = 0;
         let progressInterval;
         let playlist;
-      
-        function loadPlaylistData() {
-            const playlistData = JSON.parse(sessionStorage.getItem('currentPlaylist'));
-            if (!playlistData) {
+
+        // Get custom URL from path
+        function getCustomUrl() {
+            return window.location.pathname.substring(1);
+        }
+
+        // Fetch playlist data directly from API
+        async function fetchPlaylist() {
+            const customUrl = getCustomUrl();
+            if (!customUrl) {
                 window.location.href = '/index.html';
                 return;
             }
-            return playlistData;
+
+            try {
+                const response = await fetch(`https://ptrmoy.onrender.com/api/playlists/${customUrl}`);
+                if (!response.ok) {
+                    throw new Error('Playlist not found');
+                }
+                playlist = await response.json();
+                initializeViewer();
+            } catch (error) {
+                console.error('Error fetching playlist:', error);
+                window.location.href = '/index.html';
+            }
         }
 
         function initializeViewer() {
-            playlist = loadPlaylistData();
+            if (!playlist) return;
+            
             document.querySelector('.welcome-title').textContent = `${playlist.sender_name} sent you a playlist`;
             document.querySelector('.welcome-text').textContent = playlist.welcome_message;
             document.querySelector('.header p').textContent = `Songs that remind ${playlist.sender_name} of you`;
+            
             generateCards();
             generateSongInfo();
 
@@ -359,6 +378,8 @@
             ).join('');
             document.getElementById('cards-container').insertAdjacentHTML('beforebegin', radioInputsHTML);
         }
+
+        
 
         function generateCards() {
             const cardsContainer = document.getElementById('cards-container');
@@ -497,7 +518,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            fetchPlaylist();
             initializeViewer();
+            
 
             const pauseButton = document.getElementById('pause');
             const prevButton = document.getElementById('prev');
@@ -581,7 +604,24 @@
                         break;
                 }
             });
+            
+             document.querySelector('.open-playlist-btn').addEventListener('click', function() {
+                const welcomeScreen = document.querySelector('.welcome-screen');
+                const container = document.querySelector('.container');
+                
+                welcomeScreen.style.opacity = '0';
+                container.style.display = 'flex';
+                container.style.opacity = '1';
+                
+                setTimeout(() => {
+                    welcomeScreen.style.display = 'none';
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log("Fullscreen request failed");
+                    });
+                }, 500);
+            });
         });
+        
     </script>
 </body>
 </html>
