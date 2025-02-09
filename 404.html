@@ -5,45 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting...</title>
     <script>
-        function getQueryParams() {
-            const params = {};
-            const searchParams = new URLSearchParams(window.location.search);
-            for (const [key, value] of searchParams) {
-                params[key] = value;
-            }
-            return params;
-        }
-
-        function getCustomUrl() {
+        function handleRouting() {
             const path = window.location.pathname;
-            return path.substring(1);
-        }
-
-        async function handleRouting() {
-            const customUrl = getCustomUrl();
-            
-            if (!customUrl) {
+            if (path === '/' || path === '/index.html') {
                 window.location.href = '/index.html';
                 return;
             }
 
-            try {
-                const response = await fetch(`https://ptrmoy.onrender.com/api/playlists/${customUrl}`);
-                
-                if (!response.ok) {
-                    throw new Error('Playlist not found');
-                }
-
-                const playlist = await response.json();
-                
-                sessionStorage.setItem('currentPlaylist', JSON.stringify(playlist));
-                
-                window.location.href = '/viewer.html';
-            } catch (error) {
-                console.error('Error:', error);
-                window.location.href = '/index.html';
+            const customUrl = path.substring(1);
+            if (customUrl) {
+                window.location.href = `/viewer.html${window.location.search}`;
             }
         }
+
         window.onload = handleRouting;
     </script>
 </head>
@@ -51,7 +25,7 @@
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif;">
         <div style="text-align: center;">
             <h2>Loading your playlist...</h2>
-            <p>Please wait while we retrieve your special playlist.</p>
+            <p>Please wait while we redirect you...</p>
         </div>
     </div>
 </body>
