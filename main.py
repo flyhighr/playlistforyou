@@ -1,10 +1,13 @@
+# main.py
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import os
 import asyncio
@@ -18,6 +21,7 @@ load_dotenv()
 
 app = FastAPI(title="Playlist Sharing API")
 
+# CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,86 +39,18 @@ SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client.playlist_db
 
-spotify_token = None
-token_expiry = None
+class SpotifyToken:
+    def __init__(self):
+        self.token = None
+        self.expiry = None
 
-async def get_spotify_token():
-    global spotify_token, token_expiry
-    current_time = datetime.utcnow()
-    
-    if spotify_token and token_expiry and token_expiry > current_time:
-        return spotify_token
-        
-    try:
-        auth_string = f"{SPOTIFY_CLIENT_ID}:{SPOTIFY_CLIENT_SECRET}"
-        auth_bytes = auth_string.encode('utf-8')
-        auth_base64 = str(base64.b64encode(auth_bytes), 'utf-8')
-        
-        url = "https://accounts.spotify.com/api/token"
-        headers = {
-            "Authorization": f"Basic {auth_base64}",
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-        data = {"grant_type": "client_credentials"}
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, data=data) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    spotify_token = result["access_token"]
-                    token_expiry = current_time + datetime.timedelta(seconds=result["expires_in"] - 60)
-                    return spotify_token
-                else:
-                    raise HTTPException(status_code=500, detail="Failed to get Spotify token")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Spotify authentication error: {str(e)}")
+spotify_auth = SpotifyToken()
 
 class SpotifyTrack(BaseModel):
     title: str
     artist: str
     cover_url: str
     spotify_id: str
-
-@app.get("/api/search/songs/{query}")
-async def search_songs(query: str):
-    token = await get_spotify_token()
-    
-    url = f"https://api.spotify.com/v1/search"
-    headers = {"Authorization": f"Bearer {token}"}
-    params = {
-        "q": query,
-        "type": "track",
-        "limit": 5
-    }
-    
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    tracks = data["tracks"]["items"]
-                    
-                    results = []
-                    for track in tracks:
-                        results.append(SpotifyTrack(
-                            title=track["name"],
-                            artist=track["artists"][0]["name"],
-                            cover_url=track["album"]["images"][0]["url"] if track["album"]["images"] else "",
-                            spotify_id=track["id"]
-                        ))
-                    return results
-                else:
-                    raise HTTPException(status_code=response.status, detail="Failed to search Spotify")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error searching Spotify: {str(e)}")
-
-# Keep all existing code below this line
-def generate_random_url(length=8):
-    """Generate a random alphanumeric URL."""
-    characters = string.ascii_lowercase + string.digits
-    while True:
-        random_url = ''.join(random.choices(characters, k=length))
-        return random_url
 
 class Song(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
@@ -146,26 +82,84 @@ class PlaylistCreate(BaseModel):
             raise ValueError('Custom URL must contain only alphanumeric characters')
         return v.lower() if v else None
 
-async def ping_self():
-    """Periodically ping the health check endpoint to keep the service active."""
-    async with aiohttp.ClientSession() as session:
-        while True:
-            try:
-                async with session.get(f"{API_URL}/health") as response:
-                    if response.status == 200:
-                        print(f"Self-ping successful at {datetime.utcnow()}")
-                    else:
-                        print(f"Self-ping failed with status {response.status}")
-            except Exception as e:
-                print(f"Self-ping error: {str(e)}")
+async def get_spotify_token():
+    current_time = datetime.utcnow()
+    
+    if spotify_auth.token and spotify_auth.expiry and spotify_auth.expiry > current_time:
+        return spotify_auth.token
+        
+    try:
+        if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
+            raise HTTPException(status_code=500, detail="Spotify credentials not configured")
             
-            await asyncio.sleep(PING_INTERVAL)
+        auth_string = f"{SPOTIFY_CLIENT_ID}:{SPOTIFY_CLIENT_SECRET}"
+        auth_bytes = auth_string.encode('utf-8')
+        auth_base64 = str(base64.b64encode(auth_bytes), 'utf-8')
+        
+        url = "https://accounts.spotify.com/api/token"
+        headers = {
+            "Authorization": f"Basic {auth_base64}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {"grant_type": "client_credentials"}
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, data=data) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    spotify_auth.token = result["access_token"]
+                    spotify_auth.expiry = current_time + timedelta(seconds=result["expires_in"] - 60)
+                    return spotify_auth.token
+                else:
+                    raise HTTPException(status_code=500, 
+                                      detail=f"Failed to get Spotify token: {response.status}")
+    except Exception as e:
+        raise HTTPException(status_code=500, 
+                          detail=f"Spotify authentication error: {str(e)}")
+
+@app.get("/")
+async def read_root():
+    return FileResponse('static/index.html')
+
+@app.get("/api/search/songs/{query}")
+async def search_songs(query: str):
+    token = await get_spotify_token()
+    
+    url = f"https://api.spotify.com/v1/search"
+    headers = {"Authorization": f"Bearer {token}"}
+    params = {
+        "q": query,
+        "type": "track",
+        "limit": 5
+    }
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    tracks = data["tracks"]["items"]
+                    
+                    results = []
+                    for track in tracks:
+                        results.append(SpotifyTrack(
+                            title=track["name"],
+                            artist=track["artists"][0]["name"],
+                            cover_url=track["album"]["images"][0]["url"] if track["album"]["images"] else "",
+                            spotify_id=track["id"]
+                        ))
+                    return results
+                else:
+                    raise HTTPException(status_code=response.status, 
+                                      detail=f"Failed to search Spotify: {response.status}")
+    except Exception as e:
+        raise HTTPException(status_code=500, 
+                          detail=f"Error searching Spotify: {str(e)}")
 
 async def generate_unique_url():
-    """Generate a unique random URL that doesn't exist in the database."""
     max_attempts = 5
     for _ in range(max_attempts):
-        random_url = generate_random_url()
+        random_url = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
         existing = await db.playlists.find_one({"custom_url": random_url})
         if not existing:
             return random_url
@@ -218,10 +212,25 @@ async def create_indexes():
     await db.playlists.create_index("custom_url", unique=True)
     await db.playlists.create_index("created_at")
 
+async def ping_self():
+    async with aiohttp.ClientSession() as session:
+        while True:
+            try:
+                async with session.get(f"{API_URL}/health") as response:
+                    if response.status == 200:
+                        print(f"Self-ping successful at {datetime.utcnow()}")
+                    else:
+                        print(f"Self-ping failed with status {response.status}")
+            except Exception as e:
+                print(f"Self-ping error: {str(e)}")
+            await asyncio.sleep(PING_INTERVAL)
+
 @app.on_event("startup")
 async def startup_event():
     await create_indexes()
     asyncio.create_task(ping_self())
+
+
 
 if __name__ == "__main__":
     import uvicorn
