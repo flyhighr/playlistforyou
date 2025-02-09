@@ -1,4 +1,3 @@
-# main.py
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -60,9 +59,13 @@ class Song(BaseModel):
     
     @validator('youtube_url')
     def validate_youtube_url(cls, v):
-        if not re.match(r'^https?://(?:www\.)?youtube\.com/watch\?v=[\w-]+$|^https?://youtu\.be/[\w-]+$', v):
+        # Clean the URL by removing any query parameters
+        clean_url = v.split('?')[0]
+        
+        # Validate the cleaned URL
+        if not re.match(r'^https?://(?:www\.)?youtube\.com/watch\?v=[\w-]+$|^https?://youtu\.be/[\w-]+$', clean_url):
             raise ValueError('Invalid YouTube URL')
-        return v
+        return clean_url
     
     @validator('cover_url')
     def validate_cover_url(cls, v):
@@ -179,6 +182,10 @@ async def create_playlist(playlist: PlaylistCreate):
     else:
         final_url = await generate_unique_url()
     
+    # Clean YouTube URLs before storing
+    for song in playlist.songs:
+        song.youtube_url = song.youtube_url.split('?')[0]
+    
     playlist_dict = playlist.dict()
     playlist_dict["custom_url"] = final_url
     playlist_dict["created_at"] = datetime.utcnow()
@@ -229,8 +236,6 @@ async def ping_self():
 async def startup_event():
     await create_indexes()
     asyncio.create_task(ping_self())
-
-
 
 if __name__ == "__main__":
     import uvicorn
