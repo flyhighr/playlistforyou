@@ -339,6 +339,14 @@
 
         // Get custom URL from path
         function getCustomUrl() {
+            // First try to get from sessionStorage
+            const storedUrl = sessionStorage.getItem('customUrl');
+            if (storedUrl) {
+                // Clear it after getting it to avoid stale data
+                sessionStorage.removeItem('customUrl');
+                return storedUrl;
+            }
+            // Fallback to getting from path if somehow we got here directly
             return window.location.pathname.substring(1);
         }
 
