@@ -122,7 +122,7 @@ async def get_spotify_token():
 
 @app.get("/")
 async def read_root():
-    return FileResponse('static/index.html')
+    return "Ok"
 
 @app.get("/api/search/songs/{query}")
 async def search_songs(query: str):
