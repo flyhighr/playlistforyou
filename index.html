@@ -80,11 +80,12 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             padding: 2rem;
             opacity: 0;
             transition: opacity 0.5s ease;
             display: none;
+            padding-top: 5vh;
         }
 
         .header {
@@ -93,13 +94,13 @@
         }
 
         .header h1 {
-            font-size: 4rem;
+            font-size: 3.5rem;
             margin-bottom: 0.5rem;
             color: #333;
         }
 
         .header p {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             color: #666;
         }
 
@@ -109,8 +110,8 @@
 
         .cards {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 350px;
+            height: 350px;
             margin: 2rem 0;
         }
 
@@ -161,22 +162,12 @@
             z-index: 1;
         }
 
-        .player {
-            width: 100%;
-            max-width: 400px;
-            background: #fff;
-            border-radius: 20px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-        }
-
-        #youtube-player {
-            display: none;
-        }
-
         .song-info {
             display: none;
             animation: fadeIn 0.3s ease;
+            width: 100%;
+            max-width: 500px;
+            margin-top: 1rem;
         }
 
         .song-info.active {
@@ -184,12 +175,14 @@
         }
 
         .title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 0.5rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 100%;
-            line-height: 1.2;
-            height: 2.4rem;
         }
 
         .song-details {
@@ -197,19 +190,19 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0.5rem;
+            font-size: 1.2rem;
         }
 
         .artist {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 70%;
+            color: #666;
+            font-size: 1.4rem;
         }
+
         .progress-bar {
             width: 100%;
-            height: 4px;
+            height: 6px;
             background: #eee;
-            border-radius: 2px;
+            border-radius: 3px;
             margin: 1rem 0;
             cursor: pointer;
         }
@@ -217,7 +210,7 @@
         .progress {
             height: 100%;
             background: #333;
-            border-radius: 2px;
+            border-radius: 3px;
             transition: width 0.1s linear;
         }
 
@@ -225,7 +218,7 @@
             display: flex;
             justify-content: space-between;
             color: #666;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             margin-bottom: 1rem;
         }
 
@@ -239,7 +232,7 @@
         .controls button {
             background: none;
             border: none;
-            font-size: 2rem;
+            font-size: 2.5rem;
             color: #333;
             cursor: pointer;
             transition: transform 0.2s ease;
@@ -251,14 +244,14 @@
 
         .extra-controls {
             display: flex;
-            justify-content: flex-end;
+            justify-content: center;
             margin-top: 1rem;
         }
 
         .favorite-btn {
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: #666;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -274,7 +267,7 @@
             right: 1rem;
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: #666;
             cursor: pointer;
             z-index: 1001;
@@ -286,17 +279,45 @@
         }
 
         @media (max-width: 768px) {
-            .header h1 { font-size: 3rem; }
-            .header p { font-size: 1.2rem; }
-            .cards { width: 250px; height: 250px; }
-        }
-                @media (max-width: 768px) {
-            .title { 
-                font-size: 1.5rem;
-                height: 1.8rem;
+            .container {
+                padding-top: 2vh;
             }
-            .artist { 
-                font-size: 1rem;
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .header p {
+                font-size: 1.2rem;
+            }
+            
+            .cards {
+                width: 280px;
+                height: 280px;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+                white-space: normal;
+                line-height: 1.2;
+                height: auto;
+                max-height: 3.6rem;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+            }
+            
+            .artist {
+                font-size: 1.1rem;
+            }
+            
+            .controls button {
+                font-size: 2rem;
+            }
+            
+            .favorite-btn {
+                font-size: 1.5rem;
             }
         }
     </style>
@@ -318,119 +339,115 @@
             <p>Songs that remind me of you</p>
         </div>
         
-        <div class="right-side">
-            <input type="radio" name="slider" id="item-1" checked>
-            <input type="radio" name="slider" id="item-2">
-            <input type="radio" name="slider" id="item-3">
-            <input type="radio" name="slider" id="item-4">
-            <input type="radio" name="slider" id="item-5">
-            
-            <div class="cards">
-                <label class="card" for="item-1" id="song-1">
-                    <img src="https://upload.wikimedia.org/wikipedia/en/0/03/Chasingcars.jpg" alt="Snow Patrol">
-                </label>
-                <label class="card" for="item-2" id="song-2">
-                    <img src="https://i.scdn.co/image/ab67616d0000b27334ef8f7d06cf2fc2146f420a" alt="The Beatles">
-                </label>
-                <label class="card" for="item-3" id="song-3">
-                    <img src="https://i.scdn.co/image/ab67616d0000b27340461e96808378ae2787a7e4" alt="Mac DeMarco">
-                </label>
-                <label class="card" for="item-4" id="song-4">
-                    <img src="https://i.scdn.co/image/ab67616d0000b273b8eaddefb882b1c71c5aba71" alt="Takayoshi">
-                </label>
-                <label class="card" for="item-5" id="song-5">
-                    <img src="https://c.saavncdn.com/140/Waking-Up-Together-With-You-English-2023-20230629022937-500x500.jpg" alt="Ardhito Pramono">
-                </label>
+        <input type="radio" name="slider" id="item-1" checked>
+        <input type="radio" name="slider" id="item-2">
+        <input type="radio" name="slider" id="item-3">
+        <input type="radio" name="slider" id="item-4">
+        <input type="radio" name="slider" id="item-5">
+        
+        <div class="cards">
+            <label class="card" for="item-1" id="song-1">
+                <img src="https://upload.wikimedia.org/wikipedia/en/0/03/Chasingcars.jpg" alt="Snow Patrol">
+            </label>
+            <label class="card" for="item-2" id="song-2">
+                <img src="https://i.scdn.co/image/ab67616d0000b27334ef8f7d06cf2fc2146f420a" alt="The Beatles">
+            </label>
+            <label class="card" for="item-3" id="song-3">
+                <img src="https://i.scdn.co/image/ab67616d0000b27340461e96808378ae2787a7e4" alt="Mac DeMarco">
+            </label>
+            <label class="card" for="item-4" id="song-4">
+                <img src="https://i.scdn.co/image/ab67616d0000b273b8eaddefb882b1c71c5aba71" alt="Takayoshi">
+            </label>
+            <label class="card" for="item-5" id="song-5">
+                <img src="https://c.saavncdn.com/140/Waking-Up-Together-With-You-English-2023-20230629022937-500x500.jpg" alt="Ardhito Pramono">
+            </label>
+        </div>
+
+        <div id="youtube-player"></div>
+        
+        <div class="song-info active" id="song-info-1">
+            <div class="title">Chasing cars</div>
+            <div class="song-details">
+                <span class="artist">Snow Patrol</span>
+                <span class="duration">0:00</span>
             </div>
-
-            <div id="youtube-player"></div>
-            
-            <div class="player">
-                <div class="song-info active" id="song-info-1">
-                    <div class="title">Chasing cars</div>
-                    <div class="song-details">
-                        <span class="artist">Snow Patrol</span>
-                        <span class="duration">0:00</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress"></div>
-                    </div>
-                    <div class="time-indicator">
-                        <span class="elapsed">0:00</span>
-                        <span class="remaining">0:00</span>
-                    </div>
-                </div>
-
-                <div class="song-info" id="song-info-2">
-                    <div class="title">Lucy in the sky</div>
-                    <div class="song-details">
-                        <span class="artist">The Beatles</span>
-                        <span class="duration">0:00</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress"></div>
-                    </div>
-                    <div class="time-indicator">
-                        <span class="elapsed">0:00</span>
-                        <span class="remaining">0:00</span>
-                    </div>
-                </div>
-
-                <div class="song-info" id="song-info-3">
-                    <div class="title">20191009 I Like Her</div>
-                    <div class="song-details">
-                        <span class="artist">Mac DeMarco</span>
-                        <span class="duration">0:00</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress"></div>
-                    </div>
-                    <div class="time-indicator">
-                        <span class="elapsed">0:00</span>
-                        <span class="remaining">0:00</span>
-                    </div>
-                </div>
-
-                <div class="song-info" id="song-info-4">
-                    <div class="title">unconditionally</div>
-                    <div class="song-details">
-                        <span class="artist">Takayoshi</span>
-                        <span class="duration">0:00</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress"></div>
-                    </div>
-                    <div class="time-indicator">
-                        <span class="elapsed">0:00</span>
-                        <span class="remaining">0:00</span>
-                    </div>
-                </div>
-
-                <div class="song-info" id="song-info-5">
-                    <div class="title">Waking Up Together With You</div>
-                    <div class="song-details">
-                        <span class="artist">Ardhito Pramono</span>
-                        <span class="duration">0:00</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress"></div>
-                    </div>
-                    <div class="time-indicator">
-                        <span class="elapsed">0:00</span>
-                        <span class="remaining">0:00</span>
-                    </div>
-                </div>
-
-                <div class="controls">
-                    <button id="prev">◁</button>
-                    <button id="pause">▶</button>
-                    <button id="next">▷</button>
-                </div>
-                
-                <div class="extra-controls">
-                    <button id="favorite" class="favorite-btn">♡</button>
-                </div>
+            <div class="progress-bar">
+                <div class="progress"></div>
             </div>
+            <div class="time-indicator">
+                <span class="elapsed">0:00</span>
+                <span class="remaining">0:00</span>
+            </div>
+        </div>
+
+        <div class="song-info" id="song-info-2">
+            <div class="title">Lucy in the sky</div>
+            <div class="song-details">
+                <span class="artist">The Beatles</span>
+                <span class="duration">0:00</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress"></div>
+            </div>
+            <div class="time-indicator">
+                <span class="elapsed">0:00</span>
+                <span class="remaining">0:00</span>
+            </div>
+        </div>
+
+        <div class="song-info" id="song-info-3">
+            <div class="title">20191009 I Like Her</div>
+            <div class="song-details">
+                <span class="artist">Mac DeMarco</span>
+                <span class="duration">0:00</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress"></div>
+            </div>
+            <div class="time-indicator">
+                <span class="elapsed">0:00</span>
+                <span class="remaining">0:00</span>
+            </div>
+        </div>
+
+        <div class="song-info" id="song-info-4">
+            <div class="title">unconditionally</div>
+            <div class="song-details">
+                <span class="artist">Takayoshi</span>
+                <span class="duration">0:00</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress"></div>
+            </div>
+            <div class="time-indicator">
+                <span class="elapsed">0:00</span>
+                <span class="remaining">0:00</span>
+            </div>
+        </div>
+
+        <div class="song-info" id="song-info-5">
+            <div class="title">Waking Up Together With You</div>
+            <div class="song-details">
+                <span class="artist">Ardhito Pramono</span>
+                <span class="duration">0:00</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress"></div>
+            </div>
+            <div class="time-indicator">
+                <span class="elapsed">0:00</span>
+                <span class="remaining">0:00</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="prev">◁</button>
+            <button id="pause">▶</button>
+            <button id="next">▷</button>
+        </div>
+        
+        <div class="extra-controls">
+            <button id="favorite" class="favorite-btn">♡</button>
         </div>
     </div>
 
@@ -494,7 +511,9 @@
             
             setTimeout(() => {
                 welcomeScreen.style.display = 'none';
-                document.documentElement.requestFullscreen();
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log("Fullscreen request failed");
+                });
             }, 500);
         });
 
@@ -618,7 +637,9 @@
 
             fullscreenButton.addEventListener('click', () => {
                 if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen();
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log("Fullscreen request failed");
+                    });
                     fullscreenButton.textContent = '⛶';
                 } else {
                     document.exitFullscreen();
