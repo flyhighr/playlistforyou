@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playlist For You</title>
+    <title>Enhanced Playlist</title>
     <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <style>
@@ -15,7 +15,7 @@
         }
 
         body {
-            background: #ffffff;
+            background: #f5f5f5;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -29,8 +29,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -42,36 +42,41 @@
         .welcome-content {
             text-align: center;
             max-width: 90%;
-            width: 400px;
-            padding: 2rem;
+            width: 500px;
+            padding: 3rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
         .welcome-title {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             color: #333;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .welcome-text {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             color: #666;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
         }
 
         .open-playlist-btn {
-            background: none;
-            border: 2px solid #333;
-            color: #333;
-            padding: 1rem 2rem;
-            border-radius: 25px;
-            font-size: 1.1rem;
+            background: #333;
+            border: none;
+            color: white;
+            padding: 1.2rem 3rem;
+            border-radius: 30px;
+            font-size: 1.2rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         .open-playlist-btn:hover {
-            background: #333;
-            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0,0,0,0.2);
         }
 
         .container {
@@ -85,18 +90,20 @@
             opacity: 0;
             transition: opacity 0.5s ease;
             display: none;
-            padding-top: 5vh;
+            padding-top: 3vh;
+            background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
         }
 
         .header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
         }
 
         .header h1 {
-            font-size: 3.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 3.8rem;
+            margin-bottom: 0.8rem;
             color: #333;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
         .header p {
@@ -104,40 +111,77 @@
             color: #666;
         }
 
-        input[type="radio"] {
-            display: none;
-        }
-
         .cards {
             position: relative;
-            width: 350px;
-            height: 350px;
+            width: 400px;
+            height: 400px;
             margin: 2rem 0;
+            perspective: 1000px;
         }
 
         .card {
             position: absolute;
             width: 100%;
             height: 100%;
-            border-radius: 15px;
+            border-radius: 20px;
             overflow: hidden;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            transform-origin: center;
         }
 
         .card img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover img {
+            transform: scale(1.05);
+        }
+
+        #item-1:checked ~ .cards #song-5,
+        #item-2:checked ~ .cards #song-1,
+        #item-3:checked ~ .cards #song-2,
+        #item-4:checked ~ .cards #song-3,
+        #item-5:checked ~ .cards #song-4 {
+            transform: translateX(-55%) scale(0.7) translateZ(-200px);
+            opacity: 0.4;
+            z-index: 0;
+        }
+
+        #item-1:checked ~ .cards #song-2,
+        #item-2:checked ~ .cards #song-3,
+        #item-3:checked ~ .cards #song-4,
+        #item-4:checked ~ .cards #song-5,
+        #item-5:checked ~ .cards #song-1 {
+            transform: translateX(55%) scale(0.7) translateZ(-200px);
+            opacity: 0.4;
+            z-index: 0;
+        }
+
+        #item-1:checked ~ .cards #song-1,
+        #item-2:checked ~ .cards #song-2,
+        #item-3:checked ~ .cards #song-3,
+        #item-4:checked ~ .cards #song-4,
+        #item-5:checked ~ .cards #song-5 {
+            transform: translateX(0) scale(1) translateZ(0);
+            opacity: 1;
+            z-index: 1;
         }
 
         .song-info {
             display: none;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.5s ease;
             width: 100%;
-            max-width: 500px;
-            margin-top: 1rem;
+            max-width: 600px;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
         .song-info.active {
@@ -145,43 +189,64 @@
         }
 
         .title {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: bold;
             color: #333;
             text-align: center;
-            margin-bottom: 0.5rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            margin-bottom: 1rem;
+            line-height: 1.3;
         }
 
         .song-details {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
-            font-size: 1.2rem;
+            margin-bottom: 1rem;
         }
 
         .artist {
             color: #666;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
+        }
+
+        .progress-container {
+            position: relative;
+            width: 100%;
+            padding: 1rem 0;
         }
 
         .progress-bar {
             width: 100%;
-            height: 6px;
+            height: 8px;
             background: #eee;
-            border-radius: 3px;
-            margin: 1rem 0;
+            border-radius: 4px;
             cursor: pointer;
+            position: relative;
         }
 
         .progress {
             height: 100%;
             background: #333;
-            border-radius: 3px;
+            border-radius: 4px;
             transition: width 0.1s linear;
+            position: relative;
+        }
+
+        .progress::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: -4px;
+            width: 16px;
+            height: 16px;
+            background: #333;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .progress-bar:hover .progress::after {
+            opacity: 1;
         }
 
         .time-indicator {
@@ -189,42 +254,57 @@
             justify-content: space-between;
             color: #666;
             font-size: 1.1rem;
-            margin-bottom: 1rem;
+            margin-top: 0.5rem;
         }
 
         .controls {
             display: flex;
             justify-content: center;
-            gap: 2rem;
-            margin-top: 1rem;
+            gap: 3rem;
+            margin-top: 2rem;
         }
 
         .controls button {
-            background: none;
+            background: white;
             border: none;
-            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 2rem;
             color: #333;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .controls button:hover {
-            transform: scale(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         }
 
         .extra-controls {
             display: flex;
             justify-content: center;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
         }
 
         .favorite-btn {
-            background: none;
+            background: white;
             border: none;
-            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.8rem;
             color: #666;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .favorite-btn.favorited {
@@ -233,14 +313,28 @@
 
         #fullscreen-btn {
             position: fixed;
-            top: 1rem;
-            right: 1rem;
-            background: none;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: white;
             border: none;
-            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.8rem;
             color: #666;
             cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #fullscreen-btn:hover,
+        .favorite-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
         }
 
         @keyframes fadeIn {
@@ -262,32 +356,46 @@
             }
             
             .cards {
-                width: 280px;
-                height: 280px;
+                width: 300px;
+                height: 300px;
             }
             
-            .title {
-                font-size: 1.5rem;
-                white-space: normal;
-                line-height: 1.2;
-                height: auto;
-                max-height: 3.6rem;
-                overflow: hidden;
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
-            }
-            
-            .artist {
-                font-size: 1.1rem;
+            .controls {
+                gap: 2rem;
             }
             
             .controls button {
-                font-size: 2rem;
+                width: 50px;
+                height: 50px;
+                font-size: 1.8rem;
             }
             
-            .favorite-btn {
-                font-size: 1.5rem;
+            .title {
+                font-size: 1.8rem;
+            }
+            
+            .artist {
+                font-size: 1.2rem;
+            }
+            
+            .welcome-title {
+                font-size: 2.2rem;
+            }
+            
+            .welcome-text {
+                font-size: 1.2rem;
+            }
+            
+            .open-playlist-btn {
+                padding: 1rem 2rem;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .cards {
+                width: 450px;
+                height: 450px;
             }
         }
     </style>
@@ -336,21 +444,19 @@
         let currentSong = 0;
         let progressInterval;
         let playlist;
+        let isDragging = false;
 
         // Get custom URL from path
         function getCustomUrl() {
-            // First try to get from sessionStorage
             const storedUrl = sessionStorage.getItem('customUrl');
             if (storedUrl) {
-                // Clear it after getting it to avoid stale data
                 sessionStorage.removeItem('customUrl');
                 return storedUrl;
             }
-            // Fallback to getting from path if somehow we got here directly
             return window.location.pathname.substring(1);
         }
 
-        // Fetch playlist data directly from API
+        // Fetch playlist data
         async function fetchPlaylist() {
             const customUrl = getCustomUrl();
             if (!customUrl) {
@@ -360,9 +466,7 @@
 
             try {
                 const response = await fetch(`https://ptrmoy.onrender.com/api/playlists/${customUrl}`);
-                if (!response.ok) {
-                    throw new Error('Playlist not found');
-                }
+                if (!response.ok) throw new Error('Playlist not found');
                 playlist = await response.json();
                 initializeViewer();
             } catch (error) {
@@ -387,8 +491,6 @@
             document.getElementById('cards-container').insertAdjacentHTML('beforebegin', radioInputsHTML);
         }
 
-        
-
         function generateCards() {
             const cardsContainer = document.getElementById('cards-container');
             cardsContainer.innerHTML = playlist.songs.map((song, index) => `
@@ -407,12 +509,14 @@
                         <span class="artist">${song.artist}</span>
                         <span class="duration">0:00</span>
                     </div>
-                    <div class="progress-bar">
-                        <div class="progress"></div>
-                    </div>
-                    <div class="time-indicator">
-                        <span class="elapsed">0:00</span>
-                        <span class="remaining">0:00</span>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress"></div>
+                        </div>
+                        <div class="time-indicator">
+                            <span class="elapsed">0:00</span>
+                            <span class="remaining">0:00</span>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -479,21 +583,25 @@
         function startProgress() {
             clearInterval(progressInterval);
             progressInterval = setInterval(() => {
-                if (player && player.getCurrentTime && player.getDuration) {
-                    const currentTime = player.getCurrentTime();
-                    const duration = player.getDuration();
-                    const progress = (currentTime / duration) * 100;
-                    
-                    const currentProgressBar = document.querySelector(`#song-info-${currentSong + 1} .progress`);
-                    currentProgressBar.style.width = `${progress}%`;
-                    
-                    const currentElapsed = document.querySelector(`#song-info-${currentSong + 1} .elapsed`);
-                    const currentRemaining = document.querySelector(`#song-info-${currentSong + 1} .remaining`);
-                    
-                    currentElapsed.textContent = formatTime(currentTime);
-                    currentRemaining.textContent = formatTime(duration - currentTime);
+                if (!isDragging && player && player.getCurrentTime && player.getDuration) {
+                    updateProgressBar();
                 }
             }, 100);
+        }
+
+        function updateProgressBar() {
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+            const progress = (currentTime / duration) * 100;
+            
+            const currentProgressBar = document.querySelector(`#song-info-${currentSong + 1} .progress`);
+            currentProgressBar.style.width = `${progress}%`;
+            
+            const currentElapsed = document.querySelector(`#song-info-${currentSong + 1} .elapsed`);
+            const currentRemaining = document.querySelector(`#song-info-${currentSong + 1} .remaining`);
+            
+            currentElapsed.textContent = formatTime(currentTime);
+            currentRemaining.textContent = formatTime(duration - currentTime);
         }
 
         function togglePlay() {
@@ -527,8 +635,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchPlaylist();
-            initializeViewer();
-            
 
             const pauseButton = document.getElementById('pause');
             const prevButton = document.getElementById('prev');
@@ -564,15 +670,36 @@
                 }
             });
 
-            document.querySelectorAll('.progress-bar').forEach(bar => {
-                bar.addEventListener('click', (e) => {
-                    const rect = e.target.getBoundingClientRect();
-                    const clickPosition = (e.clientX - rect.left) / rect.width;
-                    if (player.getDuration) {
-                        player.seekTo(clickPosition * player.getDuration());
-                    }
-                });
+            document.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('progress-bar') || e.target.classList.contains('progress')) {
+                    isDragging = true;
+                    handleProgressBarClick(e);
+                }
             });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    handleProgressBarClick(e);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            function handleProgressBarClick(e) {
+                const progressBar = e.target.closest('.progress-bar');
+                if (!progressBar) return;
+                
+                const rect = progressBar.getBoundingClientRect();
+                const clickPosition = (e.clientX - rect.left) / rect.width;
+                if (player.getDuration) {
+                    player.seekTo(clickPosition * player.getDuration());
+                    if (!isDragging) {
+                        updateProgressBar();
+                    }
+                }
+            }
 
             pauseButton.addEventListener('click', togglePlay);
             prevButton.addEventListener('click', prevSong);
@@ -588,10 +715,8 @@
                     document.documentElement.requestFullscreen().catch(err => {
                         console.log("Fullscreen request failed");
                     });
-                    fullscreenButton.textContent = '⛶';
                 } else {
                     document.exitFullscreen();
-                    fullscreenButton.textContent = '⛶';
                 }
             });
 
@@ -612,24 +737,7 @@
                         break;
                 }
             });
-            
-             document.querySelector('.open-playlist-btn').addEventListener('click', function() {
-                const welcomeScreen = document.querySelector('.welcome-screen');
-                const container = document.querySelector('.container');
-                
-                welcomeScreen.style.opacity = '0';
-                container.style.display = 'flex';
-                container.style.opacity = '1';
-                
-                setTimeout(() => {
-                    welcomeScreen.style.display = 'none';
-                    document.documentElement.requestFullscreen().catch(err => {
-                        console.log("Fullscreen request failed");
-                    });
-                }, 500);
-            });
         });
-        
     </script>
 </body>
 </html>
