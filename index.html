@@ -692,29 +692,40 @@
         const customUrlInput = document.getElementById('custom-url');
         const urlStatus = document.querySelector('.url-status');
         let urlCheckTimeout;
-
-        customUrlCheckbox.addEventListener('change', (e) => {
+        
+        customUrlCheckbox.addEventListener('change', async (e) => {
             if (e.target.checked) {
                 customUrlField.classList.add('active');
                 customUrlInput.setAttribute('required', 'required');
+                if (customUrlInput.value.trim()) {
+                    await checkUrlAvailability(customUrlInput.value.trim());
+                }
             } else {
                 customUrlField.classList.remove('active');
                 customUrlInput.removeAttribute('required');
                 customUrlInput.value = '';
+                urlStatus.className = 'url-status';
                 urlStatus.style.display = 'none';
             }
         });
-
+        
         async function checkUrlAvailability(url) {
-            if (!url) {
-                urlStatus.style.display = 'none';
+            urlStatus.className = 'url-status';
+            urlStatus.style.display = 'none';
+        
+            if (!url || !/^[a-zA-Z0-9]+$/.test(url)) {
                 return;
             }
-
+        
             try {
-                const response = await fetch(`${BACKEND_URL}/api/url-available/${url}`);
+                const response = await fetch(`${BACKEND_URL}/api/url-available/${encodeURIComponent(url)}`);
+                if (!response.ok) {
+                    throw new Error('Failed to check URL availability');
+                }
+        
                 const data = await response.json();
-
+                urlStatus.style.display = 'block';
+        
                 if (data.available) {
                     urlStatus.textContent = '✓ Available';
                     urlStatus.className = 'url-status available';
@@ -727,18 +738,24 @@
                 urlStatus.style.display = 'none';
             }
         }
-
+        
         customUrlInput.addEventListener('input', (e) => {
             const url = e.target.value.trim();
             
             if (urlCheckTimeout) {
                 clearTimeout(urlCheckTimeout);
             }
-
-            if (url && /^[a-zA-Z0-9]+$/.test(url)) {
-                urlCheckTimeout = setTimeout(() => checkUrlAvailability(url), 500);
-            } else {
-                urlStatus.style.display = 'none';
+            urlStatus.className = 'url-status';
+            urlStatus.style.display = 'none';
+            if (url) {
+                urlCheckTimeout = setTimeout(() => checkUrlAvailability(url), 300);
+            }
+        });
+        
+        customUrlInput.addEventListener('blur', (e) => {
+            const url = e.target.value.trim();
+            if (url) {
+                checkUrlAvailability(url);
             }
         });
 
