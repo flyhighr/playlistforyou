@@ -12,10 +12,51 @@
             padding: 0;
             box-sizing: border-box;
             font-family: "Comic Neue", sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        :root {
+            /* Default Theme (Sage) */
+            --primary-bg: #f0f4f0;
+            --secondary-bg: #dce7dc;
+            --text-primary: #2c3e2c;
+            --text-secondary: #4a634a;
+            --accent: #7c917c;
+            --card-shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Daisy Theme */
+        [data-theme="daisy"] {
+            --primary-bg: #fff9f5;
+            --secondary-bg: #ffe8d6;
+            --text-primary: #594a3c;
+            --text-secondary: #8b7355;
+            --accent: #deb887;
+            --card-shadow: rgba(89, 74, 60, 0.1);
+        }
+
+        /* Purple Theme */
+        [data-theme="purple"] {
+            --primary-bg: #f8f5ff;
+            --secondary-bg: #e8e0ff;
+            --text-primary: #4a3f66;
+            --text-secondary: #6b5b8e;
+            --accent: #9c89b8;
+            --card-shadow: rgba(74, 63, 102, 0.1);
+        }
+
+        /* Ocean Theme */
+        [data-theme="ocean"] {
+            --primary-bg: #f5f9ff;
+            --secondary-bg: #e0eeff;
+            --text-primary: #2c4866;
+            --text-secondary: #4a698e;
+            --accent: #7ca5d8;
+            --card-shadow: rgba(44, 72, 102, 0.1);
         }
 
         body {
-            background: #ffffff;
+            background: var(--primary-bg);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -48,20 +89,20 @@
 
         .welcome-title {
             font-size: 2.5rem;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
 
         .welcome-text {
             font-size: 1.3rem;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 2rem;
         }
 
         .open-playlist-btn {
             background: none;
-            border: 2px solid #333;
-            color: #333;
+            border: 2px solid var(--accent);
+            color: var(--text-primary);
             padding: 1rem 2rem;
             border-radius: 25px;
             font-size: 1.1rem;
@@ -70,8 +111,8 @@
         }
 
         .open-playlist-btn:hover {
-            background: #333;
-            color: white;
+            background: var(--accent);
+            color: var(--primary-bg);
         }
 
         .container {
@@ -98,22 +139,18 @@
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
-            color: #333;
+            color: var(--text-primary);
         }
 
         .header p {
             font-size: 1.5rem;
-            color: #666;
-        }
-
-        input[type="radio"] {
-            display: none;
+            color: var(--text-secondary);
         }
 
         .cards {
             position: relative;
-            width: 350px;
-            height: 350px;
+            width: 300px;
+            height: 300px;
             margin: 2rem 0;
             perspective: 1000px;
         }
@@ -125,9 +162,9 @@
             border-radius: 15px;
             overflow: hidden;
             cursor: pointer;
-            transition: all 0.5s ease;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 20px var(--card-shadow);
         }
 
         .card img {
@@ -137,21 +174,10 @@
             pointer-events: none;
         }
 
-        /* Updated card positioning */
         .card {
             opacity: 0;
             transform: translateX(100%) scale(0.8);
             pointer-events: none;
-        }
-      
-        .cards {
-            touch-action: pan-y pinch-zoom;
-            user-select: none;
-        }
-
-        .card {
-            touch-action: pan-y pinch-zoom;
-            user-select: none;
         }
 
         .card.active {
@@ -163,14 +189,14 @@
 
         .card.prev {
             opacity: 0.4;
-            transform: translateX(-40%) scale(0.8);
+            transform: translateX(-60%) scale(0.8);
             pointer-events: auto;
             z-index: 1;
         }
 
         .card.next {
             opacity: 0.4;
-            transform: translateX(40%) scale(0.8);
+            transform: translateX(60%) scale(0.8);
             pointer-events: auto;
             z-index: 1;
         }
@@ -190,7 +216,7 @@
         .title {
             font-size: 1.8rem;
             font-weight: bold;
-            color: #333;
+            color: var(--text-primary);
             text-align: center;
             margin-bottom: 0.5rem;
             height: 2.4rem;
@@ -203,7 +229,7 @@
 
         .artist {
             font-size: 1.4rem;
-            color: #666;
+            color: var(--text-secondary);
             text-align: center;
             margin-bottom: 1rem;
             height: 1.8rem;
@@ -216,7 +242,7 @@
         .progress-bar {
             width: 100%;
             height: 6px;
-            background: #eee;
+            background: var(--secondary-bg);
             border-radius: 3px;
             margin: 1rem 0;
             cursor: pointer;
@@ -225,7 +251,7 @@
 
         .progress {
             height: 100%;
-            background: #333;
+            background: var(--accent);
             border-radius: 3px;
             transition: width 0.1s linear;
         }
@@ -233,7 +259,7 @@
         .time-indicator {
             display: flex;
             justify-content: space-between;
-            color: #666;
+            color: var(--text-secondary);
             font-size: 1.1rem;
             margin-bottom: 1rem;
         }
@@ -249,7 +275,7 @@
             background: none;
             border: none;
             font-size: 2.5rem;
-            color: #333;
+            color: var(--text-primary);
             cursor: pointer;
             transition: transform 0.2s ease;
             width: 50px;
@@ -264,16 +290,19 @@
         }
 
         .extra-controls {
+            position: fixed;
             display: flex;
-            justify-content: center;
-            margin-top: 1rem;
+            gap: 1rem;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1001;
         }
 
-        .favorite-btn {
+        .control-btn {
             background: none;
             border: none;
-            font-size: 2rem;
-            color: #666;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s ease;
             width: 40px;
@@ -281,28 +310,54 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 50%;
+            background: var(--secondary-bg);
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+            background: var(--accent);
+            color: var(--primary-bg);
         }
 
         .favorite-btn.favorited {
             color: #ff4444;
+            background: var(--primary-bg);
         }
 
-        #fullscreen-btn {
+        .theme-selector {
             position: fixed;
             top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            font-size: 2rem;
-            color: #666;
-            cursor: pointer;
+            left: 1rem;
             z-index: 1001;
-            width: 40px;
-            height: 40px;
+            background: var(--secondary-bg);
+            border-radius: 20px;
+            padding: 0.5rem;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            gap: 0.5rem;
         }
+
+        .theme-btn {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-bg);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-btn.active {
+            transform: scale(1.2);
+        }
+
+        #theme-sage { background-color: #7c917c; }
+        #theme-daisy { background-color: #deb887; }
+        #theme-purple { background-color: #9c89b8; }
+        #theme-ocean { background-color: #7ca5d8; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -315,8 +370,8 @@
             }
             
             .cards {
-                width: 280px;
-                height: 280px;
+                width: 250px;
+                height: 250px;
             }
             
             .title {
@@ -334,11 +389,28 @@
                 width: 40px;
                 height: 40px;
             }
+
+            .theme-selector {
+                top: auto;
+                bottom: 1rem;
+                left: 50%;
+                transform: translateX(-50%);
+            }
         }
     </style>
 </head>
 <body>
-    <button id="fullscreen-btn">⛶</button>
+    <div class="theme-selector">
+        <button class="theme-btn active" id="theme-sage" data-theme="sage"></button>
+        <button class="theme-btn" id="theme-daisy" data-theme="daisy"></button>
+        <button class="theme-btn" id="theme-purple" data-theme="purple"></button>
+        <button class="theme-btn" id="theme-ocean" data-theme="ocean"></button>
+    </div>
+    
+    <div class="extra-controls">
+        <button id="favorite" class="control-btn favorite-btn">♡</button>
+        <button id="fullscreen-btn" class="control-btn">⛶</button>
+    </div>
     
     <div class="welcome-screen">
         <div class="welcome-content">
@@ -363,10 +435,6 @@
             <button id="pause">▶</button>
             <button id="next">▷</button>
         </div>
-        
-        <div class="extra-controls">
-            <button id="favorite" class="favorite-btn">♡</button>
-        </div>
     </div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -376,6 +444,18 @@
         let progressInterval;
         let playlist;
         let isPlayerReady = false;
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        // Theme handling
+        const themeButtons = document.querySelectorAll('.theme-btn');
+        themeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.body.dataset.theme = btn.dataset.theme;
+                themeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
 
         function initializeYouTubePlayer() {
             if (!playlist || !playlist.songs || !playlist.songs.length) return;
@@ -411,7 +491,6 @@
                 
                 playlist = await response.json();
                 localStorage.setItem('currentPlaylist', JSON.stringify({ url: customUrl, data: playlist }));
-                
                 history.replaceState({}, '', '/' + customUrl);
                 
                 initializeViewer();
@@ -457,10 +536,46 @@
             generateSongInfo();
             updateCardClasses();
             initializeCardListeners();
-            initializeTouchListeners();
         }
 
         function initializeCardListeners() {
+            const cardsContainer = document.getElementById('cards-container');
+            
+            // Touch events with improved handling
+            cardsContainer.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+            }, { passive: true });
+
+            cardsContainer.addEventListener('touchmove', (e) => {
+                touchEndX = e.touches[0].clientX;
+                const diff = touchStartX - touchEndX;
+                
+                // Add resistance at edges
+                if ((currentSong === 0 && diff < 0) || 
+                    (currentSong === playlist.songs.length - 1 && diff > 0)) {
+                    return;
+                }
+                
+                // Prevent scrolling while swiping
+                if (Math.abs(diff) > 5) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            cardsContainer.addEventListener('touchend', () => {
+                const diff = touchStartX - touchEndX;
+                const threshold = 50;
+
+                if (Math.abs(diff) > threshold) {
+                    if (diff > 0) {
+                        nextSong();
+                    } else {
+                        prevSong();
+                    }
+                }
+            });
+
+            // Click events
             document.querySelectorAll('.card').forEach((card, index) => {
                 card.addEventListener('click', () => {
                     if (index !== currentSong) {
@@ -470,37 +585,6 @@
                         updateSongInfo();
                     }
                 });
-            });
-        }
-
-        function initializeTouchListeners() {
-            const cardsContainer = document.getElementById('cards-container');
-            let startX = 0;
-            let isDragging = false;
-
-            cardsContainer.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                isDragging = true;
-            });
-
-            cardsContainer.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                const currentX = e.touches[0].clientX;
-                const diff = startX - currentX;
-
-                if (Math.abs(diff) > 50) {
-                    isDragging = false;
-                    if (diff > 0) {
-                        nextSong();
-                    } else {
-                        prevSong();
-                    }
-                }
-            });
-
-            cardsContainer.addEventListener('touchend', () => {
-                isDragging = false;
             });
         }
 
@@ -706,7 +790,6 @@
                 } else {
                     document.exitFullscreen();
                 }
-                fullscreenButton.textContent = '⛶';
             });
 
             document.addEventListener('keydown', (e) => {
