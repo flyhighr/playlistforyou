@@ -339,6 +339,67 @@
             color: #2d3748;
             word-break: break-all;
         }
+        .custom-url-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+        }
+
+        .custom-url-toggle input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+        }
+
+        .custom-url-field {
+            display: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .custom-url-field.active {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .url-field {
+            position: relative;
+        }
+
+        .url-status {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .url-status.available {
+            color: #48bb78;
+            display: block;
+        }
+
+        .url-status.unavailable {
+            color: #e53e3e;
+            display: block;
+        }
+
+        .url-input {
+            padding-right: 100px !important;
+        }
     </style>
 </head>
 <body>
@@ -352,11 +413,25 @@
                 <input type="text" id="sender-name" placeholder="How you want to appear as the sender" required>
             </div>
 
+            <label class="custom-url-toggle">
+                <input type="checkbox" id="custom-url-checkbox">
+                <span>I want to use a custom URL</span>
+            </label>
+
+            <div class="custom-url-field" id="custom-url-field">
+                <div class="form-group">
+                    <label for="custom-url">Custom URL</label>
+                    <div class="url-field">
+                        <input type="text" id="custom-url" class="url-input" placeholder="Enter a custom URL (letters and numbers only)" pattern="[a-zA-Z0-9]+" minlength="3" maxlength="50">
+                        <span class="url-status"></span>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="welcome-message">Your Message</label>
                 <textarea id="welcome-message" rows="3" placeholder="Write a heartfelt message for your recipient..." required></textarea>
             </div>
-
             <div class="tab-container">
                 <div class="tab active" data-tab="search">Search Songs</div>
                 <div class="tab" data-tab="manual">Manual Entry</div>
@@ -395,7 +470,7 @@
         const BACKEND_URL = 'https://ptrmoy.onrender.com';
         let songCount = 0;
 
-        // Tab switching functionality
+
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -406,7 +481,6 @@
             });
         });
 
-        // Spotify search functionality
         const searchInput = document.querySelector('.search-input');
         const searchButton = document.querySelector('.search-button');
         const searchResults = document.querySelector('.search-results');
@@ -524,10 +598,67 @@
             });
         }
 
+        const customUrlCheckbox = document.getElementById('custom-url-checkbox');
+        const customUrlField = document.getElementById('custom-url-field');
+        const customUrlInput = document.getElementById('custom-url');
+        const urlStatus = document.querySelector('.url-status');
+        let urlCheckTimeout;
+
+        customUrlCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                customUrlField.classList.add('active');
+                customUrlInput.setAttribute('required', 'required');
+            } else {
+                customUrlField.classList.remove('active');
+                customUrlInput.removeAttribute('required');
+                customUrlInput.value = '';
+                urlStatus.style.display = 'none';
+            }
+        });
+
+        async function checkUrlAvailability(url) {
+            if (!url) {
+                urlStatus.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/url-available/${url}`);
+                const data = await response.json();
+
+                if (data.available) {
+                    urlStatus.textContent = '✓ Available';
+                    urlStatus.className = 'url-status available';
+                } else {
+                    urlStatus.textContent = '✗ Unavailable';
+                    urlStatus.className = 'url-status unavailable';
+                }
+            } catch (error) {
+                console.error('Error checking URL availability:', error);
+                urlStatus.style.display = 'none';
+            }
+        }
+
+        customUrlInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            
+            if (urlCheckTimeout) {
+                clearTimeout(urlCheckTimeout);
+            }
+
+            if (url && /^[a-zA-Z0-9]+$/.test(url)) {
+                urlCheckTimeout = setTimeout(() => checkUrlAvailability(url), 500);
+            } else {
+                urlStatus.style.display = 'none';
+            }
+        });
+
+        // Update handleSubmit function to include custom URL
         async function handleSubmit(e) {
             e.preventDefault();
 
             const senderName = document.getElementById('sender-name').value;
+            const customUrl = customUrlCheckbox.checked ? document.getElementById('custom-url').value.trim() : undefined;
             const welcomeMessage = document.getElementById('welcome-message').value;
 
             const songs = Array.from(document.querySelectorAll('.song-entry')).map(entry => ({
@@ -544,6 +675,7 @@
 
             const playlistData = {
                 sender_name: senderName,
+                custom_url: customUrl,
                 welcome_message: welcomeMessage,
                 songs: songs
             };
@@ -583,7 +715,9 @@
             }
         }
 
-        // Event listeners
+
+        
+
         searchButton.addEventListener('click', () => {
             const query = searchInput.value.trim();
             if (query) {
