@@ -370,6 +370,34 @@
         let playlist;
         let isPlayerReady = false;
 
+        function initializeYouTubePlayer() {
+            if (!playlist || !playlist.songs || !playlist.songs.length) return;
+            
+            const videoId = extractVideoId(playlist.songs[0].youtube_url);
+            player = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                videoId: videoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'disablekb': 1,
+                    'origin': window.location.origin
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onYouTubeIframeAPIReady() {
+            // Don't create player immediately - wait for playlist data
+            if (playlist && playlist.songs && playlist.songs.length) {
+                initializeYouTubePlayer();
+            }
+        }
+
         async function fetchPlaylist() {
             const customUrl = getCustomUrl();
             if (!customUrl) {
@@ -391,6 +419,8 @@
                 }));
                 
                 initializeViewer();
+                // Initialize YouTube player after we have the playlist
+                initializeYouTubePlayer();
             } catch (error) {
                 // Try to load from localStorage if fetch fails
                 const storedPlaylist = localStorage.getItem('currentPlaylist');
@@ -399,6 +429,8 @@
                     if (parsed.url === customUrl) {
                         playlist = parsed.data;
                         initializeViewer();
+                        // Initialize YouTube player with stored playlist
+                        initializeYouTubePlayer();
                         return;
                     }
                 }
