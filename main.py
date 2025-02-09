@@ -5,6 +5,8 @@ from typing import List, Optional
 from datetime import datetime
 import re
 import os
+import asyncio
+import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 from dotenv import load_dotenv
@@ -22,6 +24,9 @@ app.add_middleware(
 )
 
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+API_URL = os.getenv("API_URL", "https://ptrmoy.onrender.com") 
+PING_INTERVAL = int(os.getenv("PING_INTERVAL", "300"))  
+
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client.playlist_db
 
@@ -54,6 +59,21 @@ class PlaylistCreate(BaseModel):
         if not re.match(r'^[a-zA-Z0-9]+$', v):
             raise ValueError('Custom URL must contain only alphanumeric characters')
         return v.lower()
+
+async def ping_self():
+    """Periodically ping the health check endpoint to keep the service active."""
+    async with aiohttp.ClientSession() as session:
+        while True:
+            try:
+                async with session.get(f"{API_URL}/health") as response:
+                    if response.status == 200:
+                        print(f"Self-ping successful at {datetime.utcnow()}")
+                    else:
+                        print(f"Self-ping failed with status {response.status}")
+            except Exception as e:
+                print(f"Self-ping error: {str(e)}")
+            
+            await asyncio.sleep(PING_INTERVAL)
 
 @app.get("/health")
 async def health_check():
@@ -100,6 +120,7 @@ async def create_indexes():
 @app.on_event("startup")
 async def startup_event():
     await create_indexes()
+    asyncio.create_task(ping_self()) 
 
 if __name__ == "__main__":
     import uvicorn
