@@ -5,19 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting...</title>
     <script>
+        // GitHub Pages serves this 404.html file for all unknown routes
         function handleRouting() {
             const path = window.location.pathname;
+            const baseUrl = window.location.origin;
+            
+            // If we're at the root or index, stay there
             if (path === '/' || path === '/index.html') {
-                window.location.href = '/index.html';
                 return;
             }
 
+            // Extract the custom URL (everything after the first slash)
             const customUrl = path.substring(1);
+            
             if (customUrl) {
-                window.location.href = `/viewer.html${window.location.search}`;
+                // Store the custom URL in sessionStorage
+                sessionStorage.setItem('customUrl', customUrl);
+                // Redirect to viewer.html
+                window.location.href = `${baseUrl}/viewer.html`;
+            } else {
+                // If no custom URL, go to index
+                window.location.href = `${baseUrl}/index.html`;
             }
         }
 
+        // Run routing logic when page loads
         window.onload = handleRouting;
     </script>
 </head>
