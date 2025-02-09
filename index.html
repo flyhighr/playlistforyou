@@ -3,35 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Songs That Reminds Me Of You</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>Songs That Remind Me Of You</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
         }
 
         body {
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 2rem;
+            color: #2d3748;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
         }
 
         h1 {
             text-align: center;
             margin-bottom: 2rem;
-            color: #333;
+            color: #1a202c;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .intro-text {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            color: #4a5568;
+            font-size: 1.1rem;
+            line-height: 1.6;
         }
 
         .form-group {
@@ -41,85 +53,109 @@
         label {
             display: block;
             margin-bottom: 0.5rem;
-            color: #555;
+            color: #4a5568;
             font-weight: 500;
+            font-size: 0.95rem;
         }
 
         input, textarea {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
             font-size: 1rem;
-            transition: border-color 0.3s;
+            transition: all 0.3s ease;
+            background: white;
         }
 
         input:focus, textarea:focus {
             outline: none;
-            border-color: #007bff;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .songs-container {
             margin-top: 2rem;
+            display: grid;
+            gap: 1.5rem;
         }
 
         .song-entry {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
             position: relative;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .song-entry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .remove-song {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: #ff4444;
+            background: #ff4e4e;
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
             cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .remove-song:hover {
+            background: #ff3333;
+            transform: scale(1.05);
         }
 
         .add-song {
-            background: #28a745;
+            background: #48bb78;
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            padding: 1rem 2rem;
             cursor: pointer;
             font-size: 1rem;
+            font-weight: 600;
             width: 100%;
             margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .add-song:hover {
+            background: #38a169;
+            transform: translateY(-2px);
         }
 
         .submit-playlist {
-            background: #007bff;
+            background: #667eea;
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 1rem 2rem;
+            border-radius: 12px;
+            padding: 1.25rem 2rem;
             cursor: pointer;
             font-size: 1.1rem;
+            font-weight: 600;
             width: 100%;
             margin-top: 2rem;
+            transition: all 0.3s ease;
         }
 
-        .error {
-            color: #ff4444;
-            font-size: 0.9rem;
-            margin-top: 0.25rem;
+        .submit-playlist:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
         }
 
-        .success {
-            text-align: center;
-            background: #d4edda;
-            color: #155724;
-            padding: 1rem;
-            border-radius: 6px;
-            margin-top: 1rem;
+        .custom-url-toggle {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .url-check {
@@ -130,36 +166,66 @@
 
         .url-status {
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .url-available {
-            color: #28a745;
+            color: #48bb78;
         }
 
         .url-taken {
-            color: #ff4444;
+            color: #ff4e4e;
+        }
+
+        .success {
+            text-align: center;
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+            font-weight: 500;
+        }
+
+        .success strong {
+            display: block;
+            margin-top: 0.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            color: #2d3748;
         }
 
         @media (max-width: 768px) {
             .container {
-                padding: 1rem;
+                padding: 1.5rem;
             }
 
-            input, textarea, button {
-                font-size: 16px; 
+            h1 {
+                font-size: 2rem;
+            }
+
+            .song-entry {
+                padding: 1rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Create Your Playlist</h1>
+        <h1>Create Your Special Playlist</h1>
+        <p class="intro-text">Share your favorite songs with someone special. Create a unique playlist with your personal message and let the music speak for you. 🎵</p>
         
         <form id="playlist-form">
-            <div class="form-group">
+            <div class="custom-url-toggle">
+                <input type="checkbox" id="use-custom-url">
+                <label for="use-custom-url">I want to choose my own custom URL</label>
+            </div>
+
+            <div class="form-group" id="custom-url-group" style="display: none;">
                 <label for="custom-url">Custom URL</label>
                 <div class="url-check">
-                    <input type="text" id="custom-url" placeholder="Enter your custom URL (e.g., mysongs)" required
+                    <input type="text" id="custom-url" placeholder="Enter your custom URL (e.g., mysongs)"
                            pattern="[a-zA-Z0-9]{3,50}" title="3-50 alphanumeric characters only">
                     <span class="url-status"></span>
                 </div>
@@ -171,16 +237,16 @@
             </div>
 
             <div class="form-group">
-                <label for="welcome-message">Welcome Message</label>
-                <textarea id="welcome-message" rows="3" placeholder="Write a message for your recipient" required></textarea>
+                <label for="welcome-message">Your Message</label>
+                <textarea id="welcome-message" rows="3" placeholder="Write a heartfelt message for your recipient..." required></textarea>
             </div>
 
             <div class="songs-container" id="songs-container">
                 <!-- Song entries will be added here -->
             </div>
 
-            <button type="button" class="add-song" id="add-song">Add Song</button>
-            <button type="submit" class="submit-playlist">Create Playlist</button>
+            <button type="button" class="add-song" id="add-song">+ Add Another Song</button>
+            <button type="submit" class="submit-playlist">Create Your Playlist ✨</button>
         </form>
     </div>
 
@@ -202,6 +268,11 @@
 
         const checkUrlAvailability = debounce(async (url) => {
             const statusSpan = document.querySelector('.url-status');
+            
+            if (!url) {
+                statusSpan.textContent = '';
+                return;
+            }
             
             if (url.length < 3) {
                 statusSpan.textContent = 'URL too short';
@@ -239,19 +310,19 @@
                 <button type="button" class="remove-song">Remove</button>
                 <div class="form-group">
                     <label>Song Title</label>
-                    <input type="text" class="song-title" required>
+                    <input type="text" class="song-title" placeholder="Enter the song title" required>
                 </div>
                 <div class="form-group">
                     <label>Artist</label>
-                    <input type="text" class="song-artist" required>
+                    <input type="text" class="song-artist" placeholder="Enter the artist name" required>
                 </div>
                 <div class="form-group">
                     <label>Cover Image URL</label>
-                    <input type="url" class="song-cover" required>
+                    <input type="url" class="song-cover" placeholder="Paste the album cover image URL" required>
                 </div>
                 <div class="form-group">
                     <label>YouTube URL</label>
-                    <input type="url" class="song-youtube" required>
+                    <input type="url" class="song-youtube" placeholder="Paste the YouTube video URL" required>
                 </div>
             `;
 
@@ -266,7 +337,8 @@
         async function handleSubmit(e) {
             e.preventDefault();
 
-            const customUrl = document.getElementById('custom-url').value;
+            const useCustomUrl = document.getElementById('use-custom-url').checked;
+            const customUrl = useCustomUrl ? document.getElementById('custom-url').value : null;
             const senderName = document.getElementById('sender-name').value;
             const welcomeMessage = document.getElementById('welcome-message').value;
 
@@ -277,18 +349,23 @@
                 youtube_url: entry.querySelector('.song-youtube').value
             }));
 
+            const playlistData = {
+                sender_name: senderName,
+                welcome_message: welcomeMessage,
+                songs: songs
+            };
+
+            if (customUrl) {
+                playlistData.custom_url = customUrl;
+            }
+
             try {
                 const response = await fetch(`${BACKEND_URL}/api/playlists`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        custom_url: customUrl,
-                        sender_name: senderName,
-                        welcome_message: welcomeMessage,
-                        songs: songs
-                    })
+                    body: JSON.stringify(playlistData)
                 });
 
                 if (!response.ok) {
@@ -300,8 +377,9 @@
                 const successDiv = document.createElement('div');
                 successDiv.className = 'success';
                 successDiv.innerHTML = `
-                    Playlist created successfully!<br>
-                    Share this link: <strong>${window.location.origin}/${customUrl}</strong>
+                    ✨ Playlist created successfully! ✨<br>
+                    Share this link with someone special:<br>
+                    <strong>${window.location.origin}/${data.custom_url}</strong>
                 `;
                 
                 document.querySelector('.container').appendChild(successDiv);
@@ -316,9 +394,27 @@
             }
         }
 
+        // Toggle custom URL input visibility
+        document.getElementById('use-custom-url').addEventListener('change', (e) => {
+            const customUrlGroup = document.getElementById('custom-url-group');
+            const customUrlInput = document.getElementById('custom-url');
+            
+            if (e.target.checked) {
+                customUrlGroup.style.display = 'block';
+                customUrlInput.required = true;
+            } else {
+                customUrlGroup.style.display = 'none';
+                customUrlInput.required = false;
+                customUrlInput.value = '';
+                document.querySelector('.url-status').textContent = '';
+            }
+        });
+
         document.getElementById('add-song').addEventListener('click', addSongEntry);
         document.getElementById('playlist-form').addEventListener('submit', handleSubmit);
         document.getElementById('custom-url').addEventListener('input', (e) => checkUrlAvailability(e.target.value));
+
+        // Add first song entry on page load
         addSongEntry();
     </script>
 </body>
