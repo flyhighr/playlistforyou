@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional
+import random
+import string
 from datetime import datetime
 import re
 import os
@@ -24,11 +26,18 @@ app.add_middleware(
 )
 
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-API_URL = os.getenv("API_URL", "https://ptrmoy.onrender.com") 
-PING_INTERVAL = int(os.getenv("PING_INTERVAL", "300"))  
+API_URL = os.getenv("API_URL", "https://ptrmoy.onrender.com")
+PING_INTERVAL = int(os.getenv("PING_INTERVAL", "300"))
 
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client.playlist_db
+
+def generate_random_url(length=8):
+    """Generate a random alphanumeric URL."""
+    characters = string.ascii_lowercase + string.digits
+    while True:
+        random_url = ''.join(random.choices(characters, k=length))
+        return random_url
 
 class Song(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
@@ -49,16 +58,16 @@ class Song(BaseModel):
         return v
 
 class PlaylistCreate(BaseModel):
-    custom_url: str = Field(..., min_length=3, max_length=50)
+    custom_url: Optional[str] = Field(None, min_length=3, max_length=50)
     sender_name: str = Field(..., min_length=1, max_length=100)
     welcome_message: str = Field(..., min_length=1, max_length=200)
     songs: List[Song] = Field(..., max_items=100)
     
     @validator('custom_url')
     def validate_custom_url(cls, v):
-        if not re.match(r'^[a-zA-Z0-9]+$', v):
+        if v is not None and not re.match(r'^[a-zA-Z0-9]+$', v):
             raise ValueError('Custom URL must contain only alphanumeric characters')
-        return v.lower()
+        return v.lower() if v else None
 
 async def ping_self():
     """Periodically ping the health check endpoint to keep the service active."""
@@ -75,17 +84,32 @@ async def ping_self():
             
             await asyncio.sleep(PING_INTERVAL)
 
+async def generate_unique_url():
+    """Generate a unique random URL that doesn't exist in the database."""
+    max_attempts = 5
+    for _ in range(max_attempts):
+        random_url = generate_random_url()
+        existing = await db.playlists.find_one({"custom_url": random_url})
+        if not existing:
+            return random_url
+    raise HTTPException(status_code=500, detail="Failed to generate unique URL")
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow()}
 
 @app.post("/api/playlists")
 async def create_playlist(playlist: PlaylistCreate):
-    existing = await db.playlists.find_one({"custom_url": playlist.custom_url})
-    if existing:
-        raise HTTPException(status_code=400, detail="Custom URL already taken")
+    if playlist.custom_url:
+        existing = await db.playlists.find_one({"custom_url": playlist.custom_url})
+        if existing:
+            raise HTTPException(status_code=400, detail="Custom URL already taken")
+        final_url = playlist.custom_url
+    else:
+        final_url = await generate_unique_url()
     
     playlist_dict = playlist.dict()
+    playlist_dict["custom_url"] = final_url
     playlist_dict["created_at"] = datetime.utcnow()
     
     result = await db.playlists.insert_one(playlist_dict)
@@ -93,7 +117,7 @@ async def create_playlist(playlist: PlaylistCreate):
     return {
         "message": "Playlist created successfully",
         "playlist_id": str(result.inserted_id),
-        "custom_url": playlist.custom_url
+        "custom_url": final_url
     }
 
 @app.get("/api/playlists/{custom_url}")
@@ -120,7 +144,7 @@ async def create_indexes():
 @app.on_event("startup")
 async def startup_event():
     await create_indexes()
-    asyncio.create_task(ping_self()) 
+    asyncio.create_task(ping_self())
 
 if __name__ == "__main__":
     import uvicorn
