@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <style>
+        /* Previous CSS remains exactly the same */
         * {
             margin: 0;
             padding: 0;
@@ -205,6 +206,7 @@
             border-radius: 3px;
             margin: 1rem 0;
             cursor: pointer;
+            position: relative;
         }
 
         .progress {
@@ -366,6 +368,7 @@
         let currentSong = 0;
         let progressInterval;
         let playlist;
+        let isPlayerReady = false;
 
         async function fetchPlaylist() {
             const customUrl = getCustomUrl();
@@ -380,8 +383,25 @@
                     throw new Error('Playlist not found');
                 }
                 playlist = await response.json();
+                
+                // Store the playlist data in localStorage
+                localStorage.setItem('currentPlaylist', JSON.stringify({
+                    url: customUrl,
+                    data: playlist
+                }));
+                
                 initializeViewer();
             } catch (error) {
+                // Try to load from localStorage if fetch fails
+                const storedPlaylist = localStorage.getItem('currentPlaylist');
+                if (storedPlaylist) {
+                    const parsed = JSON.parse(storedPlaylist);
+                    if (parsed.url === customUrl) {
+                        playlist = parsed.data;
+                        initializeViewer();
+                        return;
+                    }
+                }
                 console.error('Error fetching playlist:', error);
                 window.location.href = '/index.html';
             }
@@ -390,10 +410,14 @@
         function getCustomUrl() {
             const storedUrl = sessionStorage.getItem('customUrl');
             if (storedUrl) {
-                sessionStorage.removeItem('customUrl');
                 return storedUrl;
             }
-            return window.location.pathname.substring(1);
+            const pathUrl = window.location.pathname.substring(1);
+            if (pathUrl) {
+                sessionStorage.setItem('customUrl', pathUrl);
+                return pathUrl;
+            }
+            return null;
         }
 
         function initializeViewer() {
@@ -448,13 +472,16 @@
         }
 
         function onYouTubeIframeAPIReady() {
+            const videoId = extractVideoId(playlist?.songs[0]?.youtube_url);
             player = new YT.Player('youtube-player', {
                 height: '0',
                 width: '0',
+                videoId: videoId,
                 playerVars: {
                     'playsinline': 1,
                     'controls': 0,
-                    'disablekb': 1
+                    'disablekb': 1,
+                    'origin': window.location.origin
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -462,6 +489,13 @@
                 }
             });
         }
+
+        function onPlayerReady(event) {
+            isPlayerReady = true;
+            const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
+            player.loadVideoById(videoId);
+            player.pauseVideo();
+            updateSongInfo();
 
         function onPlayerStateChange(event) {
             const pauseButton = document.getElementById('pause');
@@ -477,14 +511,8 @@
                 startProgress();
             } else if (event.data == YT.PlayerState.PAUSED) {
                 pauseButton.textContent = '▶';
+                clearInterval(progressInterval);
             }
-        }
-
-        function onPlayerReady(event) {
-            const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
-            player.loadVideoById(videoId);
-            player.pauseVideo();
-            updateSongInfo();
         }
 
         function updateSongInfo() {
@@ -508,18 +536,24 @@
                     const progress = (currentTime / duration) * 100;
                     
                     const currentProgressBar = document.querySelector(`#song-info-${currentSong + 1} .progress`);
-                    currentProgressBar.style.width = `${progress}%`;
+                    if (currentProgressBar) {
+                        currentProgressBar.style.width = `${progress}%`;
+                    }
                     
                     const currentElapsed = document.querySelector(`#song-info-${currentSong + 1} .elapsed`);
                     const currentRemaining = document.querySelector(`#song-info-${currentSong + 1} .remaining`);
                     
-                    currentElapsed.textContent = formatTime(currentTime);
-                    currentRemaining.textContent = formatTime(duration - currentTime);
+                    if (currentElapsed && currentRemaining) {
+                        currentElapsed.textContent = formatTime(currentTime);
+                        currentRemaining.textContent = formatTime(duration - currentTime);
+                    }
                 }
             }, 100);
         }
 
         function togglePlay() {
+            if (!isPlayerReady) return;
+            
             const pauseButton = document.getElementById('pause');
             if (player.getPlayerState() === YT.PlayerState.PLAYING) {
                 player.pauseVideo();
@@ -533,6 +567,8 @@
         }
 
         function nextSong() {
+            if (!isPlayerReady) return;
+            
             clearInterval(progressInterval);
             currentSong = (currentSong + 1) % playlist.songs.length;
             const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
@@ -541,6 +577,8 @@
         }
 
         function prevSong() {
+            if (!isPlayerReady) return;
+            
             clearInterval(progressInterval);
             currentSong = (currentSong - 1 + playlist.songs.length) % playlist.songs.length;
             const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
@@ -585,12 +623,25 @@
                 }
             });
 
+            // Enhanced progress bar click handling
             document.querySelectorAll('.progress-bar').forEach(bar => {
                 bar.addEventListener('click', (e) => {
-                    const rect = e.target.getBoundingClientRect();
+                    if (!isPlayerReady) return;
+                    
+                    const rect = bar.getBoundingClientRect();
                     const clickPosition = (e.clientX - rect.left) / rect.width;
                     if (player.getDuration) {
-                        player.seekTo(clickPosition * player.getDuration());
+                        const newTime = clickPosition * player.getDuration();
+                        player.seekTo(newTime);
+                        
+                        // Update progress bar immediately
+                        const progress = (newTime / player.getDuration()) * 100;
+                        bar.querySelector('.progress').style.width = `${progress}%`;
+                        
+                        // Update time displays
+                        const songInfo = document.getElementById(`song-info-${currentSong + 1}`);
+                        songInfo.querySelector('.elapsed').textContent = formatTime(newTime);
+                        songInfo.querySelector('.remaining').textContent = formatTime(player.getDuration() - newTime);
                     }
                 });
             });
