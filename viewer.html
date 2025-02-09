@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playlist For You</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Comic Neue", sans-serif;
+        }
+
+        body {
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.5s ease;
+        }
+
+        .welcome-content {
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            padding: 2rem;
+        }
+
+        .welcome-title {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-text {
+            font-size: 1.3rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .open-playlist-btn {
+            background: none;
+            border: 2px solid #333;
+            color: #333;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .open-playlist-btn:hover {
+            background: #333;
+            color: white;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            display: none;
+            padding-top: 5vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .header p {
+            font-size: 1.8rem;
+            color: #666;
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        .cards {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            margin: 2rem 0;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .song-info {
+            display: none;
+            animation: fadeIn 0.3s ease;
+            width: 100%;
+            max-width: 500px;
+            margin-top: 1rem;
+        }
+
+        .song-info.active {
+            display: block;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .artist {
+            color: #666;
+            font-size: 1.4rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #eee;
+            border-radius: 3px;
+            margin: 1rem 0;
+            cursor: pointer;
+        }
+
+        .progress {
+            height: 100%;
+            background: #333;
+            border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+
+        .time-indicator {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .controls button {
+            background: none;
+            border: none;
+            font-size: 2.5rem;
+            color: #333;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .controls button:hover {
+            transform: scale(1.1);
+        }
+
+        .extra-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .favorite-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .favorite-btn.favorited {
+            color: #ff4444;
+        }
+
+        #fullscreen-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #666;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding-top: 2vh;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .header p {
+                font-size: 1.2rem;
+            }
+            
+            .cards {
+                width: 280px;
+                height: 280px;
+            }
+            
+            .title {
+                font-size: 1.5rem;
+                white-space: normal;
+                line-height: 1.2;
+                height: auto;
+                max-height: 3.6rem;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+            }
+            
+            .artist {
+                font-size: 1.1rem;
+            }
+            
+            .controls button {
+                font-size: 2rem;
+            }
+            
+            .favorite-btn {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="fullscreen-btn">⛶</button>
+    
+    <div class="welcome-screen">
+        <div class="welcome-content">
+            <h1 class="welcome-title"></h1>
+            <p class="welcome-text"></p>
+            <button class="open-playlist-btn">Open Playlist</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Playlist</h1>
+            <p></p>
+        </div>
+        
+        <div class="cards" id="cards-container">
+            <!-- Cards will be dynamically added here -->
+        </div>
+
+        <div id="youtube-player"></div>
+        
+        <div id="song-info-container">
+            <!-- Song info will be dynamically added here -->
+        </div>
+
+        <div class="controls">
+            <button id="prev">◁</button>
+            <button id="pause">▶</button>
+            <button id="next">▷</button>
+        </div>
+        
+        <div class="extra-controls">
+            <button id="favorite" class="favorite-btn">♡</button>
+        </div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let player;
+        let currentSong = 0;
+        let progressInterval;
+        let playlist;
+      
+        function loadPlaylistData() {
+            const playlistData = JSON.parse(sessionStorage.getItem('currentPlaylist'));
+            if (!playlistData) {
+                window.location.href = '/index.html';
+                return;
+            }
+            return playlistData;
+        }
+
+        function initializeViewer() {
+            playlist = loadPlaylistData();
+            document.querySelector('.welcome-title').textContent = `${playlist.sender_name} sent you a playlist`;
+            document.querySelector('.welcome-text').textContent = playlist.welcome_message;
+            document.querySelector('.header p').textContent = `Songs that remind ${playlist.sender_name} of you`;
+            generateCards();
+            generateSongInfo();
+
+            const radioInputsHTML = playlist.songs.map((_, index) => 
+                `<input type="radio" name="slider" id="item-${index + 1}"${index === 0 ? ' checked' : ''}>`
+            ).join('');
+            document.getElementById('cards-container').insertAdjacentHTML('beforebegin', radioInputsHTML);
+        }
+
+        function generateCards() {
+            const cardsContainer = document.getElementById('cards-container');
+            cardsContainer.innerHTML = playlist.songs.map((song, index) => `
+                <label class="card" for="item-${index + 1}" id="song-${index + 1}">
+                    <img src="${song.cover_url}" alt="${song.title}">
+                </label>
+            `).join('');
+        }
+
+        function generateSongInfo() {
+            const container = document.getElementById('song-info-container');
+            container.innerHTML = playlist.songs.map((song, index) => `
+                <div class="song-info${index === 0 ? ' active' : ''}" id="song-info-${index + 1}">
+                    <div class="title">${song.title}</div>
+                    <div class="song-details">
+                        <span class="artist">${song.artist}</span>
+                        <span class="duration">0:00</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress"></div>
+                    </div>
+                    <div class="time-indicator">
+                        <span class="elapsed">0:00</span>
+                        <span class="remaining">0:00</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function extractVideoId(url) {
+            const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/;
+            const match = url.match(regex);
+            return match ? match[1] : null;
+        }
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0,
+                    'disablekb': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerStateChange(event) {
+            const pauseButton = document.getElementById('pause');
+            
+            if (event.data == YT.PlayerState.ENDED) {
+                nextSong();
+                pauseButton.textContent = '▶';
+            } else if (event.data == YT.PlayerState.PLAYING) {
+                pauseButton.textContent = '▐▐';
+                const duration = formatTime(player.getDuration());
+                document.querySelector(`#song-info-${currentSong + 1} .duration`).textContent = duration;
+                document.querySelector(`#song-info-${currentSong + 1} .remaining`).textContent = duration;
+                startProgress();
+            } else if (event.data == YT.PlayerState.PAUSED) {
+                pauseButton.textContent = '▶';
+            }
+        }
+
+        function onPlayerReady(event) {
+            const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
+            player.loadVideoById(videoId);
+            player.pauseVideo();
+            updateSongInfo();
+        }
+
+        function updateSongInfo() {
+            document.querySelectorAll('.song-info').forEach(info => info.classList.remove('active'));
+            document.getElementById(`song-info-${currentSong + 1}`).classList.add('active');
+            document.getElementById(`item-${currentSong + 1}`).checked = true;
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function startProgress() {
+            clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                if (player && player.getCurrentTime && player.getDuration) {
+                    const currentTime = player.getCurrentTime();
+                    const duration = player.getDuration();
+                    const progress = (currentTime / duration) * 100;
+                    
+                    const currentProgressBar = document.querySelector(`#song-info-${currentSong + 1} .progress`);
+                    currentProgressBar.style.width = `${progress}%`;
+                    
+                    const currentElapsed = document.querySelector(`#song-info-${currentSong + 1} .elapsed`);
+                    const currentRemaining = document.querySelector(`#song-info-${currentSong + 1} .remaining`);
+                    
+                    currentElapsed.textContent = formatTime(currentTime);
+                    currentRemaining.textContent = formatTime(duration - currentTime);
+                }
+            }, 100);
+        }
+
+        function togglePlay() {
+            const pauseButton = document.getElementById('pause');
+            if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                player.pauseVideo();
+                pauseButton.textContent = '▶';
+                clearInterval(progressInterval);
+            } else {
+                player.playVideo();
+                pauseButton.textContent = '▐▐';
+                startProgress();
+            }
+        }
+
+        function nextSong() {
+            clearInterval(progressInterval);
+            currentSong = (currentSong + 1) % playlist.songs.length;
+            const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
+            player.loadVideoById(videoId);
+            updateSongInfo();
+        }
+
+        function prevSong() {
+            clearInterval(progressInterval);
+            currentSong = (currentSong - 1 + playlist.songs.length) % playlist.songs.length;
+            const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
+            player.loadVideoById(videoId);
+            updateSongInfo();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeViewer();
+
+            const pauseButton = document.getElementById('pause');
+            const prevButton = document.getElementById('prev');
+            const nextButton = document.getElementById('next');
+            const favoriteButton = document.getElementById('favorite');
+            const fullscreenButton = document.getElementById('fullscreen-btn');
+
+            document.querySelector('.open-playlist-btn').addEventListener('click', function() {
+                const welcomeScreen = document.querySelector('.welcome-screen');
+                const container = document.querySelector('.container');
+                
+                welcomeScreen.style.opacity = '0';
+                container.style.display = 'flex';
+                container.style.opacity = '1';
+                
+                setTimeout(() => {
+                    welcomeScreen.style.display = 'none';
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log("Fullscreen request failed");
+                    });
+                }, 500);
+            });
+
+            document.addEventListener('change', (e) => {
+                if (e.target.type === 'radio' && e.target.name === 'slider') {
+                    const newIndex = parseInt(e.target.id.replace('item-', '')) - 1;
+                    if (newIndex !== currentSong) {
+                        currentSong = newIndex;
+                        const videoId = extractVideoId(playlist.songs[currentSong].youtube_url);
+                        player.loadVideoById(videoId);
+                        updateSongInfo();
+                    }
+                }
+            });
+
+            document.querySelectorAll('.progress-bar').forEach(bar => {
+                bar.addEventListener('click', (e) => {
+                    const rect = e.target.getBoundingClientRect();
+                    const clickPosition = (e.clientX - rect.left) / rect.width;
+                    if (player.getDuration) {
+                        player.seekTo(clickPosition * player.getDuration());
+                    }
+                });
+            });
+
+            pauseButton.addEventListener('click', togglePlay);
+            prevButton.addEventListener('click', prevSong);
+            nextButton.addEventListener('click', nextSong);
+            
+            favoriteButton.addEventListener('click', () => {
+                favoriteButton.classList.toggle('favorited');
+                favoriteButton.textContent = favoriteButton.classList.contains('favorited') ? '♥' : '♡';
+            });
+
+            fullscreenButton.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log("Fullscreen request failed");
+                    });
+                    fullscreenButton.textContent = '⛶';
+                } else {
+                    document.exitFullscreen();
+                    fullscreenButton.textContent = '⛶';
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                switch(e.key) {
+                    case ' ':
+                        e.preventDefault();
+                        togglePlay();
+                        break;
+                    case 'ArrowLeft':
+                        prevSong();
+                        break;
+                    case 'ArrowRight':
+                        nextSong();
+                        break;
+                    case 'f':
+                        fullscreenButton.click();
+                        break;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
