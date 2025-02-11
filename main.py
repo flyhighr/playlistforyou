@@ -285,7 +285,7 @@ async def create_playlist(playlist: PlaylistCreate, request: Request):
                 raise HTTPException(status_code=400, detail="Custom URL already taken")
             final_url = custom_url
         else:
-            url_length = 4
+            url_length = 5
             max_attempts = 10
             attempt = 0
             
