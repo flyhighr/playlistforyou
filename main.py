@@ -24,6 +24,9 @@ import certifi
 from functools import wraps
 from typing import Callable
 import time
+import random
+import string
+
 load_dotenv()
 
 required_env_vars = [
@@ -270,28 +273,42 @@ async def search_songs(query: str, request: Request):
             detail="Internal server error during Spotify search"
         )
 
+
 @app.post("/api/playlists")
 @limiter.limit("10/minute")
 async def create_playlist(playlist: PlaylistCreate, request: Request):
     try:
         if playlist.custom_url:
-            existing = await db.playlists.find_one({"custom_url": playlist.custom_url})
+            custom_url = playlist.custom_url.lower()
+            existing = await db.playlists.find_one({"custom_url": custom_url})
             if existing:
                 raise HTTPException(status_code=400, detail="Custom URL already taken")
-            final_url = playlist.custom_url
+            final_url = custom_url
         else:
-            final_url = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-            max_attempts = 5
+            url_length = 4
+            max_attempts = 10
             attempt = 0
+            
             while attempt < max_attempts:
+                chars = string.ascii_lowercase + string.digits
+                chars = chars.replace('1', '').replace('l', '').replace('0', '').replace('o', '')
+                
+                final_url = ''.join(random.choices(chars, k=url_length))
                 existing = await db.playlists.find_one({"custom_url": final_url})
+                
                 if not existing:
                     break
-                final_url = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+                    
                 attempt += 1
+                if attempt % 5 == 0:
+                    url_length += 1
+                    
             if attempt >= max_attempts:
-                raise HTTPException(status_code=500, detail="Failed to generate unique URL")
-        
+                raise HTTPException(
+                    status_code=500, 
+                    detail="Failed to generate unique URL"
+                )
+
         playlist_dict = playlist.dict()
         playlist_dict["custom_url"] = final_url
         playlist_dict["created_at"] = datetime.utcnow()
