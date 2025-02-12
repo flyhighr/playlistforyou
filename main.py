@@ -105,21 +105,44 @@ client = AsyncIOMotorClient(
 )
 db = client.playlist_db
 
-# Metrics
 Instrumentator().instrument(app).expose(app)
 
-# Models
 class SpotifyTrack(BaseModel):
     title: str
     artist: str
     cover_url: str
     spotify_id: str
+    
+class TimedMessage(BaseModel):
+    start_time: str = Field(..., description="Start time in MM:SS format")
+    end_time: Optional[str] = Field(None, description="Optional end time in MM:SS format")
+    message: str = Field(..., min_length=1, max_length=500)
+    
+    @validator('start_time', 'end_time')
+    def validate_time_format(cls, v):
+        if v is None:
+            return v
+        if not re.match(r'^[0-5][0-9]:[0-5][0-9]$', v):
+            raise ValueError('Time must be in MM:SS format')
+        return v
+    
+    @validator('end_time')
+    def validate_end_time(cls, v, values):
+        if v is None:
+            return v
+        if 'start_time' in values:
+            start_mins, start_secs = map(int, values['start_time'].split(':'))
+            end_mins, end_secs = map(int, v.split(':'))
+            if (end_mins * 60 + end_secs) <= (start_mins * 60 + start_secs):
+                raise ValueError('End time must be after start time')
+        return v
 
 class Song(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     artist: str = Field(..., min_length=1, max_length=200)
     cover_url: str = Field(..., min_length=1, max_length=500)
     youtube_url: str = Field(..., min_length=1, max_length=500)
+    timed_messages: Optional[List[TimedMessage]] = Field(default=[], max_items=50)
     
     @validator('youtube_url')
     def validate_youtube_url(cls, v):
@@ -132,6 +155,12 @@ class Song(BaseModel):
     def validate_cover_url(cls, v):
         if not re.match(r'^https?://.+$', v):
             raise ValueError('Invalid cover URL')
+        return v
+    
+    @validator('timed_messages')
+    def validate_timed_messages(cls, v):
+        if len(v) > 50:
+            raise ValueError('Maximum 50 timed messages allowed per song')
         return v
 
 class PlaylistCreate(BaseModel):
@@ -436,20 +465,36 @@ async def get_playlist(custom_url: str, request: Request):
             detail="Internal server error while retrieving playlist"
         )
 
-@app.get("/api/url-available/{custom_url}")
-@limiter.limit("30/minute")
-async def check_url_availability(custom_url: str, request: Request):
-    if not re.match(r'^[a-zA-Z0-9]{3,50}$', custom_url):
-        return {"available": False, "reason": "Invalid URL format"}
-    
+@app.get("/api/playlists/{custom_url}")
+@limiter.limit("60/minute")
+@cache_response(ttl_seconds=300)
+async def get_playlist(custom_url: str, request: Request):
     try:
-        existing = await db.playlists.find_one({"custom_url": custom_url.lower()})
-        return {"available": existing is None}
+        playlist = await db.playlists.find_one({"custom_url": custom_url.lower()})
+        if not playlist:
+            raise HTTPException(status_code=404, detail="Playlist not found")
+        
+        playlist["_id"] = str(playlist["_id"])
+        for song in playlist["songs"]:
+            if "timed_messages" not in song:
+                song["timed_messages"] = []
+            for message in song["timed_messages"]:
+                start_mins, start_secs = map(int, message["start_time"].split(":"))
+                message["start_seconds"] = start_mins * 60 + start_secs
+                if message.get("end_time"):
+                    end_mins, end_secs = map(int, message["end_time"].split(":"))
+                    message["end_seconds"] = end_mins * 60 + end_secs
+                else:
+                    message["end_seconds"] = None
+        
+        return playlist
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error checking URL availability: {str(e)}")
+        logger.error(f"Error retrieving playlist: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail="Internal server error while checking URL availability"
+            detail="Internal server error while retrieving playlist"
         )
 
 async def create_indexes():
