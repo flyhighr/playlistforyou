@@ -26,6 +26,9 @@ from typing import Callable
 import time
 import random
 import string
+from yt_dlp import YoutubeDL
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
@@ -230,6 +233,42 @@ async def health_check():
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Service unavailable")
 
+
+async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
+    """
+    Search YouTube for a song and return the most relevant video URL.
+    Returns None if no confident match is found.
+    """
+    search_query = f"{song_title} {artist} official music video"
+    
+    ydl_opts = {
+        'format': 'best',
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,
+        'default_search': 'ytsearch1:', 
+    }
+    
+    try:
+        def _search():
+            with YoutubeDL(ydl_opts) as ydl:
+                result = ydl.extract_info(search_query, download=False)
+                if 'entries' in result and result['entries']:
+                    video = result['entries'][0]
+                    title_lower = video.get('title', '').lower()
+                    if (song_title.lower() in title_lower or 
+                        artist.lower() in title_lower):
+                        return f"https://youtube.com/watch?v={video['id']}"
+            return None
+            
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as pool:
+            url = await loop.run_in_executor(pool, _search)
+            return url
+    except Exception as e:
+        logger.error(f"YouTube search error: {str(e)}")
+        return None
+
 @app.get("/api/search/songs/{query}")
 @limiter.limit("20/minute")
 @cache_response(ttl_seconds=60)
@@ -252,12 +291,12 @@ async def search_songs(query: str, request: Request):
                     tracks = data["tracks"]["items"]
                     
                     return [
-                        SpotifyTrack(
-                            title=track["name"],
-                            artist=track["artists"][0]["name"],
-                            cover_url=track["album"]["images"][0]["url"] if track["album"]["images"] else "",
-                            spotify_id=track["id"]
-                        )
+                        {
+                            "title": track["name"],
+                            "artist": track["artists"][0]["name"],
+                            "cover_url": track["album"]["images"][0]["url"] if track["album"]["images"] else "",
+                            "spotify_id": track["id"]
+                        }
                         for track in tracks
                     ]
                 else:
@@ -271,6 +310,27 @@ async def search_songs(query: str, request: Request):
         raise HTTPException(
             status_code=500,
             detail="Internal server error during Spotify search"
+        )
+
+
+@app.get("/api/youtube-url")
+@limiter.limit("20/minute")
+async def get_song_youtube_url(
+    title: str,
+    artist: str,
+    request: Request
+):
+    try:
+        url = await get_youtube_url(title, artist)
+        if url:
+            return {"youtube_url": url}
+        else:
+            return {"youtube_url": None}
+    except Exception as e:
+        logger.error(f"Error getting YouTube URL: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get YouTube URL"
         )
 
 
