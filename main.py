@@ -256,9 +256,7 @@ async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
                 if 'entries' in result and result['entries']:
                     video = result['entries'][0]
                     title_lower = video.get('title', '').lower()
-                    if (song_title.lower() in title_lower or 
-                        artist.lower() in title_lower):
-                        return f"https://youtube.com/watch?v={video['id']}"
+                    return f"https://youtube.com/watch?v={video['id']}"
             return None
             
         loop = asyncio.get_event_loop()
