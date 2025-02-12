@@ -239,13 +239,13 @@ async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
     Search YouTube for a song and return the most relevant video URL.
     Returns None if no confident match is found.
     """
-    search_query = f"{song_title} {artist} official music video"
+    search_query = f"{song_title} {artist} official audio"
     ydl_opts = {
         'format': 'best',
         'quiet': True,
         'no_warnings': True,
-        'extract_flat': True,
-        'default_search': 'ytsearch1:',
+        'extract_flat': 'in_playlist',  
+        'default_search': 'ytsearch5:',  
     }
     
     try:
@@ -253,19 +253,45 @@ async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
             with YoutubeDL(ydl_opts) as ydl:
                 result = ydl.extract_info(search_query, download=False)
                 if 'entries' in result and result['entries']:
-                    video = result['entries'][0]
-                    title_lower = video.get('title', '').lower()
-                    if (song_title.lower() in title_lower or 
-                        artist.lower() in title_lower):
-                        return f"https://youtube.com/watch?v={video['id']}"
+                    best_match = None
+                    highest_score = 0
+                    
+                    for video in result['entries']:
+                        if not video:
+                            continue
+                            
+                        title = video.get('title', '').lower()
+                        score = 0
+                        if song_title.lower() in title:
+                            score += 3
+                        
+                        if artist.lower() in title:
+                            score += 2
+                            
+                        if any(term in title for term in ['official', 'audio', 'topic']):
+                            score += 1
+                            
+                        if any(term in title for term in ['cover', 'live', 'karaoke', 'remix']):
+                            score -= 2
+                            
+                        if score > highest_score:
+                            highest_score = score
+                            best_match = video
+                    
+                    if best_match and highest_score >= 3:
+                        return f"https://youtube.com/watch?v={best_match['id']}"
             return None
             
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as pool:
             url = await loop.run_in_executor(pool, _search)
+            if url:
+                logger.info(f"Found YouTube URL for {song_title} by {artist}: {url}")
+            else:
+                logger.warning(f"No YouTube URL found for {song_title} by {artist}")
             return url
     except Exception as e:
-        logger.error(f"YouTube search error: {str(e)}")
+        logger.error(f"YouTube search error for {song_title} by {artist}: {str(e)}")
         return None
 
 @app.get("/api/search/songs/{query}")
