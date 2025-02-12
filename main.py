@@ -244,8 +244,8 @@ async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
         'format': 'best',
         'quiet': True,
         'no_warnings': True,
-        'extract_flat': 'in_playlist',  
-        'default_search': 'ytsearch5:',  
+        'extract_flat': 'in_playlist',
+        'default_search': 'ytsearch5:',
     }
     
     try:
@@ -262,6 +262,7 @@ async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
                             
                         title = video.get('title', '').lower()
                         score = 0
+                        
                         if song_title.lower() in title:
                             score += 3
                         
@@ -279,7 +280,8 @@ async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
                             best_match = video
                     
                     if best_match and highest_score >= 3:
-                        return f"https://youtube.com/watch?v={best_match['id']}"
+                        video_id = best_match['id']
+                        return f"https://youtu.be/{video_id}"
             return None
             
         loop = asyncio.get_event_loop()
