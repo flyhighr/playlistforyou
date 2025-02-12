@@ -240,13 +240,12 @@ async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
     Returns None if no confident match is found.
     """
     search_query = f"{song_title} {artist} official music video"
-    
     ydl_opts = {
         'format': 'best',
         'quiet': True,
         'no_warnings': True,
         'extract_flat': True,
-        'default_search': 'ytsearch1:', 
+        'default_search': 'ytsearch1:',
     }
     
     try:
@@ -256,7 +255,9 @@ async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
                 if 'entries' in result and result['entries']:
                     video = result['entries'][0]
                     title_lower = video.get('title', '').lower()
-                    return f"https://youtube.com/watch?v={video['id']}"
+                    if (song_title.lower() in title_lower or 
+                        artist.lower() in title_lower):
+                        return f"https://youtube.com/watch?v={video['id']}"
             return None
             
         loop = asyncio.get_event_loop()
