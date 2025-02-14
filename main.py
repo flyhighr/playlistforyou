@@ -29,8 +29,6 @@ import string
 from yt_dlp import YoutubeDL
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from urllib.parse import urlparse, parse_qs
-
 
 load_dotenv()
 
@@ -389,115 +387,6 @@ async def get_song_youtube_url(
         raise HTTPException(
             status_code=500,
             detail="Failed to get YouTube URL"
-        )
-
-
-
-def extract_playlist_id(playlist_url: str) -> str:
-    """Extract Spotify playlist ID from various URL formats."""
-    try:
-        parsed = urlparse(playlist_url)
-        if parsed.hostname not in ['open.spotify.com', 'spotify.com']:
-            raise ValueError("Not a Spotify URL")
-            
-        path_parts = parsed.path.split('/')
-        if 'playlist' not in path_parts:
-            raise ValueError("Not a playlist URL")
-            
-        playlist_id = path_parts[-1]
-        if '?' in playlist_id:
-            playlist_id = playlist_id.split('?')[0]
-            
-        return playlist_id
-    except Exception as e:
-        raise ValueError(f"Invalid Spotify playlist URL: {str(e)}")
-
-async def get_playlist_tracks(playlist_id: str, token: str) -> List[SpotifyTrack]:
-    """Fetch all tracks from a Spotify playlist."""
-    tracks = []
-    offset = 0
-    limit = 50 
-    
-    async with aiohttp.ClientSession() as session:
-        while True:
-            url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
-            headers = {"Authorization": f"Bearer {token}"}
-            params = {
-                "offset": offset,
-                "limit": limit,
-                "fields": "items(track(name,artists,album(images))),total"
-            }
-            
-            try:
-                async with session.get(url, headers=headers, params=params) as response:
-                    if response.status != 200:
-                        raise HTTPException(
-                            status_code=response.status,
-                            detail="Failed to fetch playlist tracks"
-                        )
-                        
-                    data = await response.json()
-                    
-                    for item in data['items']:
-                        if not item['track']:
-                            continue
-                            
-                        track = item['track']
-                        tracks.append(SpotifyTrack(
-                            title=track['name'],
-                            artist=track['artists'][0]['name'],
-                            cover_url=track['album']['images'][0]['url'] if track['album']['images'] else "",
-                            spotify_id=track['id']
-                        ))
-                    
-                    if len(tracks) >= data['total'] or not data['items']:
-                        break
-                        
-                    offset += limit
-                    
-            except Exception as e:
-                logger.error(f"Error fetching playlist tracks: {str(e)}")
-                raise HTTPException(
-                    status_code=500,
-                    detail="Failed to fetch playlist tracks"
-                )
-    
-    return tracks
-
-class SpotifyPlaylistImport(BaseModel):
-    playlist_url: str = Field(..., description="Spotify playlist URL")
-
-@app.post("/api/import-spotify-playlist")
-@limiter.limit("5/minute")
-async def import_spotify_playlist(
-    playlist_import: SpotifyPlaylistImport,
-    request: Request
-):
-    try:
-        playlist_id = extract_playlist_id(playlist_import.playlist_url)
-        token = await get_spotify_token()
-        
-        tracks = await get_playlist_tracks(playlist_id, token)
-        
-        if not tracks:
-            raise HTTPException(
-                status_code=400,
-                detail="No tracks found in playlist"
-            )
-            
-        if len(tracks) > 100:
-            tracks = tracks[:100]
-            logger.warning(f"Playlist truncated to 100 songs")
-            
-        return tracks
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error importing Spotify playlist: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to import Spotify playlist"
         )
 
 
