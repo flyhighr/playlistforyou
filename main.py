@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator, SecretStr
-from urllib.parse import urlparse, parse_qs
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import re
@@ -390,101 +389,6 @@ async def get_song_youtube_url(
             detail="Failed to get YouTube URL"
         )
 
-
-async def get_playlist_id_from_url(url: str) -> str:
-    """Extract playlist ID from various Spotify URL formats."""
-    try:
-        parsed = urlparse(url)
-        if parsed.netloc in ['open.spotify.com', 'spotify.com']:
-            path_parts = parsed.path.split('/')
-            if 'playlist' in path_parts:
-                playlist_index = path_parts.index('playlist')
-                if len(path_parts) > playlist_index + 1:
-                    return path_parts[playlist_index + 1]
-        raise ValueError("Invalid Spotify playlist URL")
-    except Exception as e:
-        raise ValueError("Failed to parse Spotify URL")
-
-async def get_playlist_tracks(playlist_id: str, token: str) -> List[SpotifyTrack]:
-    """Fetch all tracks from a Spotify playlist."""
-    tracks = []
-    offset = 0
-    limit = 100
-    
-    async with aiohttp.ClientSession() as session:
-        while True:
-            url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
-            headers = {"Authorization": f"Bearer {token}"}
-            params = {
-                "offset": offset,
-                "limit": limit,
-                "fields": "items(track(name,artists,album(images))),next"
-            }
-            
-            try:
-                async with session.get(url, headers=headers, params=params) as response:
-                    if response.status != 200:
-                        raise HTTPException(
-                            status_code=response.status,
-                            detail="Failed to fetch playlist tracks"
-                        )
-                    
-                    data = await response.json()
-                    
-                    for item in data["items"]:
-                        if item["track"] and not item["track"].get("is_local"):
-                            track = item["track"]
-                            tracks.append(SpotifyTrack(
-                                title=track["name"],
-                                artist=track["artists"][0]["name"],
-                                cover_url=track["album"]["images"][0]["url"] if track["album"]["images"] else "",
-                                spotify_id=track["id"]
-                            ))
-                    
-                    if len(tracks) >= 100:  # Limit to 100 songs
-                        break
-                        
-                    if not data.get("next"):
-                        break
-                        
-                    offset += limit
-                    
-            except Exception as e:
-                logger.error(f"Error fetching playlist tracks: {str(e)}")
-                raise HTTPException(
-                    status_code=500,
-                    detail="Failed to fetch playlist tracks"
-                )
-    
-    return tracks[:100] 
-
-class SpotifyPlaylistImport(BaseModel):
-    playlist_url: str = Field(..., description="Spotify playlist URL")
-
-@app.post("/api/import-spotify-playlist")
-@limiter.limit("5/minute")
-async def import_spotify_playlist(
-    playlist_import: SpotifyPlaylistImport,
-    request: Request
-):
-    try:
-        playlist_id = await get_playlist_id_from_url(playlist_import.playlist_url)
-        token = await get_spotify_token()
-        
-        tracks = await get_playlist_tracks(playlist_id, token)
-        
-        return {
-            "tracks": [track.dict() for track in tracks]
-        }
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error importing Spotify playlist: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to import Spotify playlist"
-        )
 
 @app.post("/api/playlists")
 @limiter.limit("10/minute")
