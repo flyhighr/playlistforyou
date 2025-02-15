@@ -4,12 +4,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator, SecretStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
-from pymongo.server_api import ServerApi
 import re
 import os
 import asyncio
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.server_api import ServerApi
 from bson import ObjectId
 from dotenv import load_dotenv
 import base64
@@ -28,7 +28,6 @@ import time
 import random
 import string
 from yt_dlp import YoutubeDL
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
@@ -54,6 +53,7 @@ SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 ALLOWED_ORIGINS = ["https://stmy.me"]
 
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -68,6 +68,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize Sentry
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN"),
     environment=ENVIRONMENT,
@@ -75,11 +76,52 @@ sentry_sdk.init(
     profiles_sample_rate=1.0,
 )
 
+# Database Manager
+class DatabaseManager:
+    def __init__(self, mongodb_url: str):
+        self.client = AsyncIOMotorClient(
+            mongodb_url,
+            maxPoolSize=50,
+            minPoolSize=10,
+            maxIdleTimeMS=60000,
+            connectTimeoutMS=30000,
+            serverSelectionTimeoutMS=30000,
+            socketTimeoutMS=45000,
+            waitQueueTimeoutMS=30000,
+            heartbeatFrequencyMS=20000,
+            retryWrites=True,
+            retryReads=True,
+            serverApi=ServerApi('1'),
+            tlsCAFile=certifi.where()
+        )
+        self.db = self.client.playlist_db
+        self._reconnect_attempts = 0
+        self._max_reconnect_attempts = 3
+        
+    async def get_connection(self):
+        while self._reconnect_attempts < self._max_reconnect_attempts:
+            try:
+                await self.client.admin.command('ping')
+                self._reconnect_attempts = 0
+                return self.db
+            except Exception as e:
+                self._reconnect_attempts += 1
+                logger.error(f"Database connection attempt {self._reconnect_attempts} failed: {str(e)}")
+                if self._reconnect_attempts >= self._max_reconnect_attempts:
+                    raise
+                await asyncio.sleep(1 * self._reconnect_attempts)
+                
+    async def close(self):
+        self.client.close()
+
+# Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 
-spotify_token_cache = TTLCache(maxsize=1, ttl=3500) 
-playlist_cache = TTLCache(maxsize=1000, ttl=300) 
+# Initialize caches
+spotify_token_cache = TTLCache(maxsize=1, ttl=3500)
+playlist_cache = TTLCache(maxsize=1000, ttl=300)
 
+# Initialize FastAPI app
 app = FastAPI(
     title="Playlist Sharing API",
     description="Professional API for sharing music playlists",
@@ -87,6 +129,7 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -94,33 +137,14 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
-client = AsyncIOMotorClient(
-    MONGODB_URL,
-    server_api=ServerApi('1'),
-    maxPoolSize=50,
-    minPoolSize=10,
-    maxIdleTimeMS=45000,
-    connectTimeoutMS=20000,
-    serverSelectionTimeoutMS=30000,
-    socketTimeoutMS=45000,
-    waitQueueTimeoutMS=30000,
-    heartbeatFrequencyMS=15000,
-    retryWrites=True,
-    retryReads=True,
-    w='majority',
-    journal=True,
-    tlsCAFile=certifi.where()
-)
 
-async def on_mongodb_connect():
-    logger.info("Successfully connected to MongoDB")
+# Initialize database manager
+db_manager = DatabaseManager(MONGODB_URL)
 
-async def on_mongodb_disconnect():
-    logger.warning("Disconnected from MongoDB")
-db = client.playlist_db
-
+# Initialize Prometheus metrics
 Instrumentator().instrument(app).expose(app)
 
+# Pydantic models
 class SpotifyTrack(BaseModel):
     title: str
     artist: str
@@ -242,6 +266,7 @@ async def get_spotify_token():
             detail="Internal server error during Spotify authentication"
         )
 
+# Middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
@@ -263,38 +288,22 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An internal server error occurred"}
     )
 
+# Routes
 @app.get("/health")
 async def health_check():
     try:
-        await asyncio.wait_for(
-            db.command("ping"),
-            timeout=5.0
-        )
-        
-        server_status = await db.command("serverStatus")
-        
+        db = await db_manager.get_connection()
+        await db.command("ping")
         return {
             "status": "healthy",
             "timestamp": datetime.utcnow(),
-            "database": {
-                "status": "connected",
-                "connections": server_status.get("connections", {}),
-                "opcounters": server_status.get("opcounters", {})
-            }
+            "database": "connected"
         }
-    except asyncio.TimeoutError:
-        logger.error("MongoDB health check timeout")
-        raise HTTPException(status_code=503, detail="Database timeout")
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Service unavailable")
 
-
 async def get_youtube_url(song_title: str, artist: str) -> Optional[str]:
-    """
-    Search YouTube for a song and return the most relevant video URL.
-    Returns None if no confident match is found.
-    """
     search_query = f"{song_title} {artist} official audio"
     ydl_opts = {
         'format': 'best',
@@ -391,10 +400,9 @@ async def search_songs(query: str, request: Request):
     except Exception as e:
         logger.error(f"Error searching Spotify: {str(e)}")
         raise HTTPException(
-            status_code=500,
-            detail="Internal server error during Spotify search"
-        )
-
+                        status_code=500,
+                        detail="Internal server error during Spotify search"
+                    )
 
 @app.get("/api/youtube-url")
 @limiter.limit("20/minute")
@@ -416,11 +424,12 @@ async def get_song_youtube_url(
             detail="Failed to get YouTube URL"
         )
 
-
 @app.post("/api/playlists")
 @limiter.limit("10/minute")
 async def create_playlist(playlist: PlaylistCreate, request: Request):
     try:
+        db = await db_manager.get_connection()
+        
         if playlist.custom_url:
             custom_url = playlist.custom_url.lower()
             existing = await db.playlists.find_one({"custom_url": custom_url})
@@ -477,26 +486,7 @@ async def create_playlist(playlist: PlaylistCreate, request: Request):
 @cache_response(ttl_seconds=300)
 async def get_playlist(custom_url: str, request: Request):
     try:
-        playlist = await db.playlists.find_one({"custom_url": custom_url.lower()})
-        if not playlist:
-            raise HTTPException(status_code=404, detail="Playlist not found")
-        
-        playlist["_id"] = str(playlist["_id"])
-        return playlist
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error retrieving playlist: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error while retrieving playlist"
-        )
-
-@app.get("/api/playlists/{custom_url}")
-@limiter.limit("60/minute")
-@cache_response(ttl_seconds=300)
-async def get_playlist(custom_url: str, request: Request):
-    try:
+        db = await db_manager.get_connection()
         playlist = await db.playlists.find_one({"custom_url": custom_url.lower()})
         if not playlist:
             raise HTTPException(status_code=404, detail="Playlist not found")
@@ -526,6 +516,7 @@ async def get_playlist(custom_url: str, request: Request):
 
 async def create_indexes():
     try:
+        db = await db_manager.get_connection()
         await db.playlists.create_index("custom_url", unique=True)
         await db.playlists.create_index("created_at")
         logger.info("Database indexes created successfully")
@@ -546,17 +537,11 @@ async def ping_self():
                 logger.error(f"Self-ping error: {str(e)}")
             await asyncio.sleep(PING_INTERVAL)
 
-
 @app.on_event("startup")
 async def startup_event():
     try:
-        await client.admin.command('ping')
         await create_indexes()
-        
         asyncio.create_task(ping_self())
-        
-        client.get_io_loop().add_callback(on_mongodb_connect)
-        
         logger.info("Application started successfully")
     except Exception as e:
         logger.error(f"Startup error: {str(e)}")
@@ -565,7 +550,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     try:
-        client.close()
+        await db_manager.close()
         logger.info("Application shutdown complete")
     except Exception as e:
         logger.error(f"Shutdown error: {str(e)}")
