@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator, SecretStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
+from pymongo.server_api import ServerApi
 import re
 import os
 import asyncio
@@ -93,16 +94,29 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
-
 client = AsyncIOMotorClient(
     MONGODB_URL,
+    server_api=ServerApi('1'),
     maxPoolSize=50,
     minPoolSize=10,
     maxIdleTimeMS=45000,
     connectTimeoutMS=20000,
     serverSelectionTimeoutMS=30000,
+    socketTimeoutMS=45000,
+    waitQueueTimeoutMS=30000,
+    heartbeatFrequencyMS=15000,
+    retryWrites=True,
+    retryReads=True,
+    w='majority',
+    journal=True,
     tlsCAFile=certifi.where()
 )
+
+async def on_mongodb_connect():
+    logger.info("Successfully connected to MongoDB")
+
+async def on_mongodb_disconnect():
+    logger.warning("Disconnected from MongoDB")
 db = client.playlist_db
 
 Instrumentator().instrument(app).expose(app)
@@ -252,12 +266,25 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/health")
 async def health_check():
     try:
-        await db.command("ping")
+        await asyncio.wait_for(
+            db.command("ping"),
+            timeout=5.0
+        )
+        
+        server_status = await db.command("serverStatus")
+        
         return {
             "status": "healthy",
             "timestamp": datetime.utcnow(),
-            "database": "connected"
+            "database": {
+                "status": "connected",
+                "connections": server_status.get("connections", {}),
+                "opcounters": server_status.get("opcounters", {})
+            }
         }
+    except asyncio.TimeoutError:
+        logger.error("MongoDB health check timeout")
+        raise HTTPException(status_code=503, detail="Database timeout")
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Service unavailable")
@@ -519,11 +546,17 @@ async def ping_self():
                 logger.error(f"Self-ping error: {str(e)}")
             await asyncio.sleep(PING_INTERVAL)
 
+
 @app.on_event("startup")
 async def startup_event():
     try:
+        await client.admin.command('ping')
         await create_indexes()
+        
         asyncio.create_task(ping_self())
+        
+        client.get_io_loop().add_callback(on_mongodb_connect)
+        
         logger.info("Application started successfully")
     except Exception as e:
         logger.error(f"Startup error: {str(e)}")
