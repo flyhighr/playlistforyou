@@ -512,6 +512,81 @@ async def get_playlist(custom_url: str, request: Request):
             detail="Internal server error while retrieving playlist"
         )
 
+
+async def get_spotify_playlist_tracks(playlist_id: str, offset: int = 0):
+    token = await get_spotify_token()
+    
+    url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
+    headers = {"Authorization": f"Bearer {token}"}
+    params = {
+        "fields": "items(track(name,artists,album(images),id)),total",
+        "limit": 50,
+        "offset": offset
+    }
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    tracks = []
+                    
+                    for item in data["items"]:
+                        if item["track"] and item["track"]["name"]:
+                            track = item["track"]
+                            tracks.append({
+                                "title": track["name"],
+                                "artist": track["artists"][0]["name"] if track["artists"] else "Unknown Artist",
+                                "cover_url": track["album"]["images"][0]["url"] if track["album"]["images"] else "",
+                                "spotify_id": track["id"]
+                            })
+                    
+                    return {
+                        "tracks": tracks,
+                        "total": data["total"]
+                    }
+                else:
+                    logger.error(f"Spotify playlist fetch failed: {response.status}")
+                    raise HTTPException(
+                        status_code=response.status,
+                        detail="Failed to fetch Spotify playlist"
+                    )
+    except Exception as e:
+        logger.error(f"Error fetching Spotify playlist: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error while fetching Spotify playlist"
+        )
+
+@app.get("/api/spotify-playlist/{playlist_id}")
+@limiter.limit("10/minute")
+@cache_response(ttl_seconds=300)
+async def get_playlist_tracks(playlist_id: str, request: Request):
+    try:
+        if "spotify.com" in playlist_id:
+            playlist_id = playlist_id.split("/")[-1].split("?")[0]
+        
+        all_tracks = []
+        offset = 0
+        
+        while len(all_tracks) < 100:  # Limit to 100 tracks 
+            result = await get_spotify_playlist_tracks(playlist_id, offset)
+            all_tracks.extend(result["tracks"])
+            
+            if offset + 50 >= result["total"] or offset + 50 >= 100:
+                break
+                
+            offset += 50
+        
+        return {"tracks": all_tracks[:100]} 
+        
+    except Exception as e:
+        logger.error(f"Error processing Spotify playlist: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to process Spotify playlist"
+        )
+
 async def create_indexes():
     try:
         db = await db_manager.get_connection()
