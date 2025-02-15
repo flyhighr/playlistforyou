@@ -599,6 +599,33 @@ async def get_playlist(custom_url: str, request: Request):
         )
 
 
+@app.get("/api/url-available/{custom_url}")
+@limiter.limit("30/minute")
+async def check_url_availability(custom_url: str, request: Request):
+    try:
+        if not re.match(r'^[a-zA-Z0-9]+$', custom_url):
+            raise HTTPException(
+                status_code=400,
+                detail="Custom URL must contain only alphanumeric characters"
+            )
+            
+        db = await db_manager.get_connection()
+        existing = await db.playlists.find_one({"custom_url": custom_url.lower()})
+        
+        return {
+            "available": not existing,
+            "custom_url": custom_url.lower()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error checking URL availability: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error while checking URL availability"
+        )
+
+
 async def create_indexes():
     try:
         db = await db_manager.get_connection()
