@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import base64
 import logging
 import logging.handlers
+from urllib.parse import urlparse, parse_qs
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -479,39 +480,45 @@ async def create_playlist(playlist: PlaylistCreate, request: Request):
             detail="Internal server error while creating playlist"
         )
 
-@app.get("/api/playlists/{custom_url}")
-@limiter.limit("60/minute")
+
+@app.get("/api/spotify-playlist/{playlist_url:path}")
+@limiter.limit("10/minute")
 @cache_response(ttl_seconds=300)
-async def get_playlist(custom_url: str, request: Request):
+async def get_playlist_tracks(playlist_url: str, request: Request):
     try:
-        db = await db_manager.get_connection()
-        playlist = await db.playlists.find_one({"custom_url": custom_url.lower()})
-        if not playlist:
-            raise HTTPException(status_code=404, detail="Playlist not found")
+        playlist_id = playlist_url
+        if "spotify.com" in playlist_url:
+            parsed_url = urlparse(playlist_url)
+            path_parts = parsed_url.path.split('/')
+            playlist_id = path_parts[-1]
+            
+            if '?' in playlist_id:
+                playlist_id = playlist_id.split('?')[0]
         
-        playlist["_id"] = str(playlist["_id"])
-        for song in playlist["songs"]:
-            if "timed_messages" not in song:
-                song["timed_messages"] = []
-            for message in song["timed_messages"]:
-                start_mins, start_secs = map(int, message["start_time"].split(":"))
-                message["start_seconds"] = start_mins * 60 + start_secs
-                if message.get("end_time"):
-                    end_mins, end_secs = map(int, message["end_time"].split(":"))
-                    message["end_seconds"] = end_mins * 60 + end_secs
-                else:
-                    message["end_seconds"] = None
+        logger.info(f"Processing Spotify playlist ID: {playlist_id}")
         
-        return playlist
-    except HTTPException:
-        raise
+        all_tracks = []
+        offset = 0
+        
+        while len(all_tracks) < 100:
+            result = await get_spotify_playlist_tracks(playlist_id, offset)
+            all_tracks.extend(result["tracks"])
+            
+            if offset + 50 >= result["total"] or offset + 50 >= 100:
+                break
+                
+            offset += 50
+            
+            await asyncio.sleep(1)
+        
+        return {"tracks": all_tracks[:100]}  
+        
     except Exception as e:
-        logger.error(f"Error retrieving playlist: {str(e)}")
+        logger.error(f"Error processing Spotify playlist: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail="Internal server error while retrieving playlist"
+            detail="Failed to process Spotify playlist"
         )
-
 
 async def get_spotify_playlist_tracks(playlist_id: str, offset: int = 0):
     token = await get_spotify_token()
@@ -546,7 +553,7 @@ async def get_spotify_playlist_tracks(playlist_id: str, offset: int = 0):
                         "total": data["total"]
                     }
                 else:
-                    logger.error(f"Spotify playlist fetch failed: {response.status}")
+                    logger.error(f"Spotify playlist fetch failed: {response.status} - {await response.text()}")
                     raise HTTPException(
                         status_code=response.status,
                         detail="Failed to fetch Spotify playlist"
@@ -557,35 +564,40 @@ async def get_spotify_playlist_tracks(playlist_id: str, offset: int = 0):
             status_code=500,
             detail="Internal server error while fetching Spotify playlist"
         )
-
-@app.get("/api/spotify-playlist/{playlist_id}")
-@limiter.limit("10/minute")
+        
+@app.get("/api/playlists/{custom_url}")
+@limiter.limit("60/minute")
 @cache_response(ttl_seconds=300)
-async def get_playlist_tracks(playlist_id: str, request: Request):
+async def get_playlist(custom_url: str, request: Request):
     try:
-        if "spotify.com" in playlist_id:
-            playlist_id = playlist_id.split("/")[-1].split("?")[0]
+        db = await db_manager.get_connection()
+        playlist = await db.playlists.find_one({"custom_url": custom_url.lower()})
+        if not playlist:
+            raise HTTPException(status_code=404, detail="Playlist not found")
         
-        all_tracks = []
-        offset = 0
+        playlist["_id"] = str(playlist["_id"])
+        for song in playlist["songs"]:
+            if "timed_messages" not in song:
+                song["timed_messages"] = []
+            for message in song["timed_messages"]:
+                start_mins, start_secs = map(int, message["start_time"].split(":"))
+                message["start_seconds"] = start_mins * 60 + start_secs
+                if message.get("end_time"):
+                    end_mins, end_secs = map(int, message["end_time"].split(":"))
+                    message["end_seconds"] = end_mins * 60 + end_secs
+                else:
+                    message["end_seconds"] = None
         
-        while len(all_tracks) < 100:  # Limit to 100 tracks 
-            result = await get_spotify_playlist_tracks(playlist_id, offset)
-            all_tracks.extend(result["tracks"])
-            
-            if offset + 50 >= result["total"] or offset + 50 >= 100:
-                break
-                
-            offset += 50
-        
-        return {"tracks": all_tracks[:100]} 
-        
+        return playlist
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error processing Spotify playlist: {str(e)}")
+        logger.error(f"Error retrieving playlist: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail="Failed to process Spotify playlist"
+            detail="Internal server error while retrieving playlist"
         )
+
 
 async def create_indexes():
     try:
