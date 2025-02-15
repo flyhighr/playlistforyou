@@ -9,7 +9,6 @@ import os
 import asyncio
 import aiohttp
 from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.server_api import ServerApi
 from bson import ObjectId
 from dotenv import load_dotenv
 import base64
@@ -91,7 +90,6 @@ class DatabaseManager:
             heartbeatFrequencyMS=20000,
             retryWrites=True,
             retryReads=True,
-            serverApi=ServerApi('1'),
             tlsCAFile=certifi.where()
         )
         self.db = self.client.playlist_db
