@@ -608,6 +608,12 @@ async def check_url_availability(custom_url: str, request: Request):
                 status_code=400,
                 detail="Custom URL must contain only alphanumeric characters"
             )
+        if len(custom_url) < 3:
+            raise HTTPException(
+                status_code=400,
+                detail="Custom URL must be longer than 3 characters"
+            )
+            
             
         db = await db_manager.get_connection()
         existing = await db.playlists.find_one({"custom_url": custom_url.lower()})
